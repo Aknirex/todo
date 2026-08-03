@@ -1,72 +1,85 @@
 <template>
   <view class="page-detail">
-    <view class="field">
-      <text class="label">标题</text>
-      <input class="input" v-model="form.title" placeholder="输入标题" />
+    <!-- Topbar -->
+    <view class="topbar">
+      <view class="icon-btn" @tap="goBack">←</view>
+      <text class="topbar-title">任务详情</text>
+      <view class="topbar-actions">
+        <view class="undo-redo">
+          <view class="icon-btn" @tap="handleUndo">
+            <text>↩</text>
+            <text v-if="undoCount > 0" class="badge">{{ undoCount }}</text>
+          </view>
+        </view>
+        <view class="icon-btn danger" @tap="handleDelete">🗑</view>
+      </view>
     </view>
 
-    <view class="field">
-      <text class="label">优先级</text>
-      <view class="priority-picker">
-        <view
-          v-for="p in priorities"
-          :key="p.value"
-          :class="['priority-option', form.priority === p.value ? 'active' : '', `p-${p.value}`]"
-          @tap="form.priority = p.value"
-        >
-          <text>{{ p.label }}</text>
+    <scroll-view scroll-y class="detail-content">
+      <!-- Basic Fields -->
+      <view class="settings-group">
+        <view class="settings-row">
+          <text class="label">标题</text>
+          <input
+            class="field-input"
+            v-model="form.title"
+            placeholder="输入标题"
+            style="text-align:right"
+          />
+        </view>
+        <view class="settings-row">
+          <text class="label">优先级</text>
+          <view style="display:flex;gap:6rpx">
+            <view :class="['pill', form.priority === 'high' ? 'active-h' : '']" @tap="form.priority = 'high'">H</view>
+            <view :class="['pill', form.priority === 'medium' ? 'active-m' : '']" @tap="form.priority = 'medium'">M</view>
+            <view :class="['pill', form.priority === 'low' ? 'active-l' : '']" @tap="form.priority = 'low'">L</view>
+          </view>
+        </view>
+        <view class="settings-row">
+          <text class="label">📅 截止日期</text>
+          <picker mode="date" :value="form.dueDate || ''" @change="onDateChange">
+            <text class="value">{{ form.dueDate || '选择日期' }}</text>
+          </picker>
+        </view>
+        <view class="settings-row">
+          <text class="label">🏷️ 标签</text>
+          <view style="display:flex;gap:8rpx;flex-wrap:wrap;justify-content:flex-end">
+            <text v-for="(tag, i) in form.tags" :key="i" class="todo-tag" @tap="removeTag(i)">{{ tag }} ×</text>
+            <text class="todo-tag" style="background:var(--card-hover);color:var(--text-3)" @tap="showTagInput = !showTagInput">+ 添加</text>
+          </view>
+        </view>
+        <view v-if="showTagInput" class="settings-row">
+          <input v-model="newTag" placeholder="输入标签回车" style="font-size:26rpx;flex:1" @confirm="addTag" />
         </view>
       </view>
-    </view>
 
-    <view class="field">
-      <text class="label">截止日期</text>
-      <picker mode="date" :value="form.dueDate || ''" @change="onDateChange">
-        <view class="picker-display">
-          <text>{{ form.dueDate || '选择日期' }}</text>
-        </view>
-      </picker>
-    </view>
-
-    <view class="field">
-      <text class="label">标签</text>
-      <view class="tags">
-        <view class="tag" v-for="(tag, i) in form.tags" :key="i">
-          <text>{{ tag }}</text>
-          <text class="tag-remove" @tap="removeTag(i)">×</text>
+      <!-- Detail -->
+      <view class="settings-group">
+        <text class="settings-group-hd">详情</text>
+        <view style="padding:16rpx 28rpx 28rpx">
+          <textarea
+            class="detail-textarea"
+            v-model="form.detail"
+            placeholder="添加详情..."
+          />
         </view>
       </view>
-      <view class="tag-add">
-        <input class="tag-input" v-model="newTag" placeholder="添加标签" @confirm="addTag" />
-      </view>
-    </view>
-
-    <view class="field">
-      <text class="label">详情</text>
-      <textarea class="textarea" v-model="form.detail" placeholder="补充详情..." />
-    </view>
-
-    <view class="actions">
-      <view class="btn-save" @tap="handleSave">
-        <text class="btn-text">保存</text>
-      </view>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useTodoStore } from '@/stores'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useTodoStore, useUndoStore } from '@/stores'
 import type { Priority } from '@/types'
 
 const todoStore = useTodoStore()
+const undoStore = useUndoStore()
 const todoId = ref('')
+const showTagInput = ref(false)
+const newTag = ref('')
 
-const priorities = [
-  { value: 'high' as Priority, label: '高' },
-  { value: 'medium' as Priority, label: '中' },
-  { value: 'low' as Priority, label: '低' }
-]
+const undoCount = computed(() => undoStore.undoStack.length)
 
 const form = reactive({
   title: '',
@@ -75,8 +88,6 @@ const form = reactive({
   tags: [] as string[],
   detail: ''
 })
-
-const newTag = ref('')
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -95,25 +106,41 @@ onMounted(() => {
   }
 })
 
-function onDateChange(e: any) {
-  form.dueDate = e.detail.value || null
-}
-
+function onDateChange(e: any) { form.dueDate = e.detail.value || null }
 function addTag() {
   const tag = newTag.value.trim()
-  if (tag && !form.tags.includes(tag)) {
-    form.tags.push(tag)
-  }
+  if (tag && !form.tags.includes(tag)) form.tags.push(tag)
   newTag.value = ''
 }
+function removeTag(i: number) { form.tags.splice(i, 1) }
 
-function removeTag(index: number) {
-  form.tags.splice(index, 1)
+async function handleDelete() {
+  if (todoId.value) {
+    await todoStore.deleteTodo(todoId.value)
+    uni.navigateBack()
+  }
 }
 
-async function handleSave() {
+async function handleUndo() {
+  await undoStore.undo()
+  await todoStore.loadTodos()
+  // Reload form
   if (todoId.value) {
-    await todoStore.updateTodo(todoId.value, {
+    const todo = todoStore.todos.find(t => t.id === todoId.value)
+    if (todo) {
+      form.title = todo.title
+      form.priority = todo.priority
+      form.dueDate = todo.dueDate
+      form.tags = [...todo.tags]
+      form.detail = todo.detail
+    }
+  }
+}
+
+function goBack() {
+  // Save on back
+  if (todoId.value) {
+    todoStore.updateTodo(todoId.value, {
       title: form.title,
       priority: form.priority,
       dueDate: form.dueDate,
@@ -127,124 +154,47 @@ async function handleSave() {
 
 <style scoped>
 .page-detail {
-  padding: 30rpx;
-  background: #f5f5f5;
   min-height: 100vh;
-}
-
-.field {
-  margin-bottom: 32rpx;
-}
-
-.label {
-  font-size: 26rpx;
-  color: #666;
-  margin-bottom: 12rpx;
-  display: block;
-}
-
-.input {
-  padding: 20rpx 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-}
-
-.priority-picker {
+  background: var(--bg);
   display: flex;
-  gap: 16rpx;
+  flex-direction: column;
 }
-
-.priority-option {
+.detail-content {
   flex: 1;
-  padding: 16rpx;
-  text-align: center;
-  border-radius: 8rpx;
+  padding: 24rpx 32rpx;
+}
+.field-input {
+  flex: 1;
+  border: none;
+  outline: none;
   font-size: 26rpx;
-  background: #fff;
-  border: 2rpx solid #eee;
+  background: transparent;
+  color: var(--text);
+  min-width: 0;
 }
-
-.priority-option.active.p-high {
-  background: #ffeaea;
-  border-color: #e74c3c;
-  color: #e74c3c;
-}
-
-.priority-option.active.p-medium {
-  background: #fff3e0;
-  border-color: #f39c12;
-  color: #f39c12;
-}
-
-.priority-option.active.p-low {
-  background: #e8f5e9;
-  border-color: #27ae60;
-  color: #27ae60;
-}
-
-.picker-display {
-  padding: 20rpx 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #333;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
-}
-
-.tag {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 16rpx;
-  background: #e8f0fe;
-  border-radius: 6rpx;
-  font-size: 24rpx;
-  color: #4a90d9;
-}
-
-.tag-remove {
-  font-size: 28rpx;
-  color: #999;
-}
-
-.tag-input {
-  padding: 16rpx 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-}
-
-.textarea {
-  padding: 20rpx 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  min-height: 200rpx;
+.detail-textarea {
   width: 100%;
+  min-height: 160rpx;
+  border: none;
+  padding: 0;
+  font-size: 26rpx;
+  background: transparent;
+  color: var(--text);
   box-sizing: border-box;
 }
-
-.actions {
-  margin-top: 60rpx;
-}
-
-.btn-save {
-  padding: 24rpx;
-  background: #4a90d9;
-  border-radius: 12rpx;
-  text-align: center;
-}
-
-.btn-text {
+.badge {
+  position: absolute;
+  top: -4rpx;
+  right: -4rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  border-radius: 14rpx;
+  background: var(--danger);
   color: #fff;
-  font-size: 30rpx;
-  font-weight: bold;
+  font-size: 18rpx;
+  font-weight: 700;
+  line-height: 28rpx;
+  text-align: center;
+  padding: 0 6rpx;
 }
 </style>

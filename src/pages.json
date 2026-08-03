@@ -41,6 +41,12 @@
       "style": {
         "navigationBarTitleText": "许可协议"
       }
+    },
+    {
+      "path": "pages/settings/llm-setup",
+      "style": {
+        "navigationBarTitleText": "配置 AI"
+      }
     }
   ],
   "globalStyle": {

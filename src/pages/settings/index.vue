@@ -1,233 +1,114 @@
 <template>
   <view class="page-settings">
-    <view class="section">
-      <text class="section-title">LLM 配置</text>
+    <view class="topbar">
+      <view class="icon-btn" @tap="goBack">←</view>
+      <text class="topbar-title">设置</text>
+    </view>
 
-      <view class="form-group">
-        <text class="label">服务商</text>
-        <picker
-          :value="providerIndex"
-          :range="providerOptions"
-          @change="handleProviderChange"
-        >
-          <view class="picker-value">
-            {{ providerOptions[providerIndex] || '请选择' }}
-          </view>
-        </picker>
-      </view>
-
-      <view class="form-group">
-        <text class="label">API Key</text>
-        <input
-          class="input"
-          v-model="agentStore.config.apiKey"
-          placeholder="请输入 API Key"
-          :password="!showKey"
-        />
-        <view class="toggle-key" @tap="showKey = !showKey">
-          <text class="toggle-text">{{ showKey ? '隐藏' : '显示' }}</text>
+    <scroll-view scroll-y class="settings-content">
+      <!-- AI Config -->
+      <view class="settings-group">
+        <text class="settings-group-hd">AI 配置</text>
+        <view class="settings-row" @tap="goLlmSetup">
+          <text class="label">🔑 API Key</text>
+          <text class="value">
+            <text v-if="agentStore.configured" style="color:var(--success)">已配置 ✓</text>
+            <text v-else>未配置</text>
+          </text>
+        </view>
+        <view class="settings-row">
+          <text class="label">☁️ 提供商</text>
+          <text class="value">{{ agentStore.config.provider || '—' }}</text>
+        </view>
+        <view class="settings-row">
+          <text class="label">🧠 模型</text>
+          <text class="value">{{ agentStore.config.model || '—' }}</text>
         </view>
       </view>
 
-      <view class="form-group">
-        <text class="label">接口地址 (Base URL)</text>
-        <input
-          class="input"
-          v-model="agentStore.config.baseUrl"
-          placeholder="https://api.deepseek.com/v1"
-        />
+      <!-- Agent API -->
+      <view class="settings-group">
+        <text class="settings-group-hd">Agent API</text>
+        <view class="settings-row">
+          <text class="label">🖥️ API 服务</text>
+          <text class="value">未启动</text>
+        </view>
+        <view class="settings-row">
+          <text class="label">🔑 API Key</text>
+          <text class="value">点击生成 ›</text>
+        </view>
       </view>
 
-      <view class="form-group">
-        <text class="label">模型</text>
-        <input
-          class="input"
-          v-model="agentStore.config.model"
-          placeholder="deepseek-chat"
-        />
+      <!-- Appearance -->
+      <view class="settings-group">
+        <text class="settings-group-hd">外观</text>
+        <view class="settings-row" @tap="toggleTheme">
+          <text class="label">🌙 深色模式</text>
+          <view :class="['toggle', isDark ? 'on' : '']"></view>
+        </view>
       </view>
 
-      <view class="save-btn" @tap="handleSave">
-        <text class="save-text">保存配置</text>
+      <!-- Data -->
+      <view class="settings-group">
+        <text class="settings-group-hd">数据</text>
+        <view class="settings-row">
+          <text class="label">↩️ 撤销历史</text>
+          <text class="value">{{ undoStore.undoStack.length }} / 50</text>
+        </view>
+        <view class="settings-row" @tap="goExport">
+          <text class="label">📥 导出数据</text>
+          <text class="value">›</text>
+        </view>
       </view>
 
-      <view v-if="saveMsg" class="save-msg">{{ saveMsg }}</view>
-    </view>
-
-    <view class="section">
-      <text class="section-title">其他</text>
-      <view class="link-item" @tap="goPage('/pages/share/index')">
-        <text class="link-text">开源许可</text>
-        <text class="link-arrow">></text>
+      <!-- About -->
+      <view class="settings-group">
+        <text class="settings-group-hd">关于</text>
+        <view class="settings-row">
+          <text class="label">ℹ️ 版本</text>
+          <text class="value">v0.1.0</text>
+        </view>
+        <view class="settings-row" @tap="goLicense">
+          <text class="label">⚖️ 许可协议</text>
+          <text class="value">›</text>
+        </view>
       </view>
-      <view class="link-item" @tap="goPage('/pages/search/index')">
-        <text class="link-text">关于</text>
-        <text class="link-arrow">></text>
-      </view>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAgentStore } from '@/stores'
+import { useAgentStore, useUndoStore } from '@/stores'
 
 const agentStore = useAgentStore()
-const showKey = ref(false)
-const saveMsg = ref('')
-
-const providerOptions = ['DeepSeek', '小米 Mimo', '自定义']
-const providerMap: Record<string, { baseUrl: string; model: string }> = {
-  deepseek: { baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-  mimo: { baseUrl: 'https://api.mimo.xiaomi.com/v1', model: 'xiaomi-mimo' },
-  custom: { baseUrl: '', model: '' }
-}
-
-const providerKeys = ['deepseek', 'mimo', 'custom']
-
-const providerIndex = ref(0)
+const undoStore = useUndoStore()
+const isDark = ref(false)
 
 onMounted(async () => {
   await agentStore.loadConfig()
-  const pIdx = providerKeys.indexOf(agentStore.config.provider || '')
-  providerIndex.value = pIdx >= 0 ? pIdx : 0
 })
 
-function handleProviderChange(e: any) {
-  const idx = Number(e.detail.value)
-  providerIndex.value = idx
-  const key = providerKeys[idx]
-  agentStore.config.provider = key
-
-  const defaults = providerMap[key]
-  if (key !== 'custom') {
-    agentStore.config.baseUrl = defaults.baseUrl
-    agentStore.config.model = defaults.model
-  } else {
-    agentStore.config.baseUrl = ''
-    agentStore.config.model = ''
-  }
+function toggleTheme() {
+  isDark.value = !isDark.value
+  // UniApp theme switching would go here
 }
 
-async function handleSave() {
-  if (!agentStore.config.apiKey) {
-    saveMsg.value = '请输入 API Key'
-    return
-  }
-  try {
-    await agentStore.saveConfig()
-    saveMsg.value = '保存成功'
-    setTimeout(() => { saveMsg.value = '' }, 2000)
-  } catch (e: any) {
-    saveMsg.value = e.message || '保存失败'
-  }
-}
-
-function goPage(url: string) {
-  uni.navigateTo({ url })
-}
+function goBack() { uni.navigateBack() }
+function goLlmSetup() { uni.navigateTo({ url: '/pages/settings/llm-setup' }) }
+function goExport() { uni.navigateTo({ url: '/pages/share/index' }) }
+function goLicense() { uni.navigateTo({ url: '/pages/settings/license' }) }
 </script>
 
 <style scoped>
 .page-settings {
-  padding: 30rpx;
   min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.section {
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 30rpx;
-  display: block;
-}
-
-.form-group {
-  margin-bottom: 30rpx;
-}
-
-.label {
-  font-size: 26rpx;
-  color: #666;
-  margin-bottom: 12rpx;
-  display: block;
-}
-
-.input {
-  padding: 20rpx 24rpx;
-  background: #f5f5f5;
-  border-radius: 8rpx;
-  font-size: 28rpx;
-  color: #333;
-}
-
-.picker-value {
-  padding: 20rpx 24rpx;
-  background: #f5f5f5;
-  border-radius: 8rpx;
-  font-size: 28rpx;
-  color: #333;
-}
-
-.toggle-key {
-  margin-top: 8rpx;
-  display: inline-block;
-}
-
-.toggle-text {
-  font-size: 24rpx;
-  color: #4a90d9;
-}
-
-.save-btn {
-  margin-top: 40rpx;
-  padding: 24rpx;
-  background: #4a90d9;
-  border-radius: 12rpx;
+  background: var(--bg);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
-
-.save-text {
-  color: #fff;
-  font-size: 30rpx;
-}
-
-.save-msg {
-  margin-top: 16rpx;
-  font-size: 24rpx;
-  color: #27ae60;
-  text-align: center;
-}
-
-.link-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #eee;
-}
-
-.link-item:last-child {
-  border-bottom: none;
-}
-
-.link-text {
-  font-size: 28rpx;
-  color: #333;
-}
-
-.link-arrow {
-  font-size: 28rpx;
-  color: #ccc;
+.settings-content {
+  flex: 1;
+  padding: 24rpx 32rpx;
 }
 </style>

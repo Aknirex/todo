@@ -1,99 +1,281 @@
 <template>
   <view class="page-index">
-    <view class="header">
-      <text class="title">aknirex-todo</text>
-      <view class="header-actions">
-        <view class="btn-icon" @tap="goSearch">
-          <text class="icon">搜索</text>
-        </view>
-        <view class="btn-icon" @tap="goSettings">
-          <text class="icon">设置</text>
-        </view>
-      </view>
-    </view>
+    <!-- Sidebar Backdrop -->
+    <view :class="['sidebar-backdrop', sidebarOpen ? 'visible' : '']" @tap="closeSidebar"></view>
 
-    <scroll-view scroll-x class="tab-bar" :show-scrollbar="false">
-      <view
-        class="tab"
-        v-for="list in sortedLists"
-        :key="list.id"
-        :class="{ active: list.id === activeListId }"
-        @tap="activeListId = list.id"
-        @longpress="handleListLongPress(list)"
-      >
-        <text class="tab-name">{{ list.name }}</text>
+    <!-- Sidebar -->
+    <view :class="['sidebar', sidebarOpen ? 'open' : '']">
+      <view class="sidebar-header">
+        <view class="collapse-btn" @tap="closeSidebar">☰</view>
+        <text class="app-name">aknirex-todo</text>
       </view>
-      <view class="tab add-tab" @tap="startCreateList">
-        <text class="tab-name">+</text>
-      </view>
-    </scroll-view>
-
-    <view class="quick-add">
-      <input
-        class="quick-add-input"
-        v-model="newTitle"
-        placeholder="添加待办..."
-        confirm-type="done"
-        @confirm="handleQuickAdd"
-      />
-      <view class="quick-add-btn" @tap="handleQuickAdd">
-        <text class="btn-text">+</text>
-      </view>
-    </view>
-
-    <view class="todo-list" v-if="activeTodos.length > 0">
-      <view
-        class="todo-item"
-        v-for="todo in activeTodos"
-        :key="todo.id"
-        @tap="goDetail(todo.id)"
-      >
-        <view class="todo-check" @tap.stop="handleToggle(todo.id)">
-          <view :class="['checkbox', todo.completed ? 'checked' : '']">
-            <text v-if="todo.completed">✓</text>
+      <scroll-view scroll-y class="sidebar-nav">
+        <!-- Tree: Task Lists -->
+        <view class="tree-group">
+          <view class="tree-header" @tap="treeOpen = !treeOpen">
+            <text class="tree-chevron" :style="{ transform: treeOpen ? 'rotate(0)' : 'rotate(-90deg)' }">▼</text>
+            <text>任务列表</text>
+          </view>
+          <view v-show="treeOpen" class="tree-children">
+            <view
+              v-for="list in sortedLists"
+              :key="list.id"
+              :class="['tree-item', activeListId === list.id ? 'active' : '']"
+              @tap="selectList(list.id)"
+            >
+              <text class="tree-icon">📋</text>
+              <text class="tree-name">{{ list.name }}</text>
+              <text class="count">{{ getListCount(list.id) }}</text>
+            </view>
           </view>
         </view>
-        <view class="todo-content">
-          <text class="todo-title">{{ todo.title || '(无标题)' }}</text>
-          <view class="todo-meta">
-            <text :class="['priority', `priority-${todo.priority}`]">{{ priorityLabel(todo.priority) }}</text>
-            <text v-if="todo.dueDate" class="due-date">{{ todo.dueDate }}</text>
+
+        <view :class="['nav-item', currentPage === 'agent' ? 'active' : '']" @tap="goAgent">
+          <text class="ai-icon" style="font-size:28rpx;width:36rpx;text-align:center">AI</text>
+          <text>Agent</text>
+        </view>
+        <view class="nav-item" @tap="openSearch">
+          <text>🔍</text>
+          <text>搜索</text>
+        </view>
+
+        <view class="sidebar-spacer"></view>
+
+        <view :class="['nav-item', currentPage === 'settings' ? 'active' : '']" @tap="goSettings">
+          <text>⚙️</text>
+          <text>设置</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Main Content -->
+    <view class="main">
+      <!-- Topbar -->
+      <view class="topbar">
+        <view class="icon-btn" @tap="openSidebar">☰</view>
+        <text class="topbar-title">{{ activeListName }}</text>
+        <view class="topbar-actions">
+          <view class="undo-redo">
+            <view class="icon-btn" @tap="handleUndo">
+              <text>↩</text>
+              <text v-if="undoCount > 0" class="badge">{{ undoCount }}</text>
+            </view>
           </view>
         </view>
-        <view class="todo-delete" @tap.stop="handleDelete(todo.id)">
-          <text class="delete-text">删除</text>
+      </view>
+
+      <!-- Toolbar -->
+      <view class="toolbar">
+        <view class="toolbar-action" @tap="showFilterPanel = !showFilterPanel">
+          <text>筛选</text>
+          <text v-if="activeFilterCount > 0" class="filter-count">{{ activeFilterCount }}</text>
         </view>
+        <view class="toolbar-action" @tap="cycleSort">
+          <text>排序</text>
+        </view>
+        <view class="toolbar-spacer"></view>
+        <view class="toolbar-action" @tap="goAgent">
+          <text class="ai-icon" style="font-size:22rpx">AI</text>
+        </view>
+        <view class="toolbar-action" @tap="openSearch">
+          <text>🔍</text>
+        </view>
+      </view>
+
+      <!-- Filter Panel (dropdown) -->
+      <view v-if="showFilterPanel" class="filter-dropdown">
+        <view class="dropdown-hd">优先级</view>
+        <view :class="['dropdown-item', filters.has('high') ? 'active' : '']" @tap="toggleFilter('high')">
+          <text style="color:var(--danger)">●</text><text>高</text>
+        </view>
+        <view :class="['dropdown-item', filters.has('medium') ? 'active' : '']" @tap="toggleFilter('medium')">
+          <text style="color:var(--warning)">●</text><text>中</text>
+        </view>
+        <view :class="['dropdown-item', filters.has('low') ? 'active' : '']" @tap="toggleFilter('low')">
+          <text style="color:var(--success)">●</text><text>低</text>
+        </view>
+        <view class="dropdown-hd">状态</view>
+        <view :class="['dropdown-item', filters.has('active') ? 'active' : '']" @tap="toggleFilter('active')">
+          <text>进行中</text>
+        </view>
+        <view :class="['dropdown-item', filters.has('done') ? 'active' : '']" @tap="toggleFilter('done')">
+          <text>已完成</text>
+        </view>
+        <view class="dropdown-ft" @tap="clearFilters"><text class="btn-ghost" style="font-size:24rpx">清除</text></view>
+      </view>
+
+      <!-- Todo List -->
+      <scroll-view scroll-y class="content">
+        <view v-if="filteredActiveTodos.length > 0">
+          <view class="section-hd">
+            <text class="section-label">进行中</text>
+            <text class="section-count">{{ filteredActiveTodos.length }}</text>
+          </view>
+          <view
+            v-for="todo in filteredActiveTodos"
+            :key="todo.id"
+            :class="['todo', `p-${todo.priority}`]"
+            @tap="goDetail(todo.id)"
+          >
+            <view :class="['todo-check', todo.completed ? 'checked' : '']" @tap.stop="handleToggle(todo.id)">
+              <text v-if="todo.completed" style="color:#fff;font-size:20rpx">✓</text>
+            </view>
+            <view class="todo-body">
+              <text class="todo-title">{{ todo.title || '(无标题)' }}</text>
+              <view class="todo-meta">
+                <text v-for="tag in todo.tags" :key="tag" class="todo-tag">{{ tag }}</text>
+                <text v-if="todo.dueDate" :class="['todo-due', isOverdue(todo.dueDate) ? 'overdue' : '']">
+                  📅 {{ formatDue(todo.dueDate) }}
+                </text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view v-if="filteredDoneTodos.length > 0">
+          <view class="section-hd" style="margin-top:32rpx">
+            <text class="section-label">已完成</text>
+            <text class="section-count">{{ filteredDoneTodos.length }}</text>
+          </view>
+          <view
+            v-for="todo in filteredDoneTodos"
+            :key="todo.id"
+            :class="['todo', `p-${todo.priority}`, 'done']"
+            @tap="goDetail(todo.id)"
+          >
+            <view :class="['todo-check', 'checked']" @tap.stop="handleToggle(todo.id)">
+              <text style="color:#fff;font-size:20rpx">✓</text>
+            </view>
+            <view class="todo-body">
+              <text class="todo-title">{{ todo.title || '(无标题)' }}</text>
+            </view>
+          </view>
+        </view>
+
+        <view v-if="filteredActiveTodos.length === 0 && filteredDoneTodos.length === 0" class="empty">
+          <text style="font-size:48rpx;opacity:0.4">📝</text>
+          <text style="margin-top:16rpx">暂无待办事项</text>
+          <text style="font-size:22rpx;margin-top:8rpx">点击右下角 + 添加第一个待办</text>
+        </view>
+      </scroll-view>
+
+      <!-- FAB -->
+      <view class="fab" @tap="openNewTask">
+        <text style="color:#fff;font-size:44rpx">+</text>
       </view>
     </view>
 
-    <view class="empty-state" v-else>
-      <text class="empty-text">暂无待办事项</text>
-      <text class="empty-hint">在上方输入框添加你的第一个待办</text>
-    </view>
-
-    <view class="undo-bar" v-if="undoStore.canUndo" @tap="handleUndo">
-      <text class="undo-text">撤销</text>
-    </view>
-
-    <!-- Prompt modal for create / rename list -->
-    <view class="prompt-overlay" v-if="promptVisible" @tap="cancelPrompt">
-      <view class="prompt-dialog" @tap.stop>
-        <text class="prompt-title">{{ promptTitle }}</text>
-        <input
-          class="prompt-input"
-          v-model="promptValue"
-          :placeholder="promptPlaceholder"
-          confirm-type="done"
-          @confirm="confirmPrompt"
+    <!-- New Task Overlay -->
+    <view :class="['new-task-overlay', newTaskOpen ? 'open' : '']">
+      <view class="new-task-top">
+        <view class="topbar" style="border:none;padding:0;height:auto;margin-bottom:24rpx">
+          <text class="topbar-title">新建任务</text>
+          <view class="topbar-actions">
+            <view class="icon-btn" @tap="closeNewTask">✕</view>
+          </view>
+        </view>
+        <view class="new-task-meta">
+          <view style="display:flex;gap:6rpx">
+            <view :class="['pill', newPriority === 'high' ? 'active-h' : '']" @tap="newPriority = 'high'">H</view>
+            <view :class="['pill', newPriority === 'medium' ? 'active-m' : '']" @tap="newPriority = 'medium'">M</view>
+            <view :class="['pill', newPriority === 'low' ? 'active-l' : '']" @tap="newPriority = 'low'">L</view>
+          </view>
+          <view :class="['meta-btn', newTaskTags.length > 0 ? 'active' : '']" @tap="showTagInput = !showTagInput">
+            <text>🏷️ 标签</text>
+          </view>
+          <view :class="['meta-btn', newDueDate ? 'active' : '']">
+            <picker mode="date" :value="newDueDate || ''" @change="onNewDueChange">
+              <text>📅 截止日期</text>
+            </picker>
+          </view>
+        </view>
+        <view v-if="showTagInput" style="margin-top:16rpx;display:flex;gap:8rpx;flex-wrap:wrap">
+          <text v-for="(tag, i) in newTaskTags" :key="i" class="todo-tag" @tap="newTaskTags.splice(i, 1)">
+            {{ tag }} ×
+          </text>
+          <input
+            v-model="newTagInput"
+            placeholder="输入标签回车"
+            style="font-size:24rpx;flex:1;min-width:120rpx"
+            @confirm="addNewTag"
+          />
+        </view>
+        <view class="new-task-title-row">
+          <input
+            v-model="newTitle"
+            type="text"
+            placeholder="任务标题..."
+            @confirm="focusDetail"
+          />
+        </view>
+      </view>
+      <view class="new-task-body">
+        <textarea
+          ref="newDetailRef"
+          v-model="newDetail"
+          placeholder="添加详情（可选）..."
         />
-        <view class="prompt-actions">
-          <view class="prompt-btn" @tap="cancelPrompt">
-            <text class="prompt-btn-text">取消</text>
-          </view>
-          <view class="prompt-btn prompt-btn-primary" @tap="confirmPrompt">
-            <text class="prompt-btn-text primary-text">确定</text>
-          </view>
+        <view style="display:flex;justify-content:flex-end;gap:16rpx;margin-top:24rpx">
+          <view class="btn btn-outline" @tap="closeNewTask">取消</view>
+          <view class="btn btn-primary" @tap="createFromOverlay">✓ 创建</view>
         </view>
+      </view>
+    </view>
+
+    <!-- Search Overlay -->
+    <view :class="['search-overlay', searchOpen ? 'open' : '']">
+      <view class="search-blur-bg"></view>
+      <view class="search-overlay-inner">
+        <view class="topbar">
+          <view class="icon-btn" @tap="closeSearch">←</view>
+          <text class="topbar-title">搜索</text>
+        </view>
+        <view class="input-bar">
+          <text style="color:var(--text-3)">🔍</text>
+          <input
+            v-model="searchKeyword"
+            type="text"
+            placeholder="搜索任务..."
+            @confirm="doSearch"
+          />
+        </view>
+        <scroll-view scroll-y class="search-content">
+          <view v-if="!searchDone" class="search-history">
+            <view class="search-history-hd">
+              <text>最近搜索</text>
+              <text style="color:var(--primary);font-size:22rpx" @tap="searchHistory = []">清除</text>
+            </view>
+            <view
+              v-for="q in searchHistory"
+              :key="q"
+              class="search-history-item"
+              @tap="fillSearch(q)"
+            >
+              <text style="color:var(--text-3)">🕐</text>
+              <text>{{ q }}</text>
+            </view>
+          </view>
+          <view v-else>
+            <view v-if="searchResults.length === 0" class="empty">
+              <text>无搜索结果</text>
+            </view>
+            <view v-else>
+              <view
+                v-for="todo in searchResults"
+                :key="todo.id"
+                :class="['todo', `p-${todo.priority}`]"
+                @tap="goDetail(todo.id); closeSearch()"
+              >
+                <view class="todo-body">
+                  <text class="todo-title">{{ todo.title }}</text>
+                  <view class="todo-meta">
+                    <text v-for="tag in todo.tags" :key="tag" class="todo-tag">{{ tag }}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
       </view>
     </view>
   </view>
@@ -102,451 +284,520 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useTodoStore, useListStore, useUndoStore } from '@/stores'
-import type { Priority, TodoList } from '@/types'
+import { searchTodos } from '@/services/search'
+import type { Todo, Priority } from '@/types'
 
 const todoStore = useTodoStore()
 const listStore = useListStore()
 const undoStore = useUndoStore()
-const newTitle = ref('')
-const activeListId = ref('')
-const defaultListId = ref('')
 
-// Sort lists: default list first, then by sortOrder
+// Sidebar
+const sidebarOpen = ref(false)
+const treeOpen = ref(true)
+const activeListId = ref('default')
+const currentPage = ref('list')
+
+// New Task
+const newTaskOpen = ref(false)
+const newTitle = ref('')
+const newDetail = ref('')
+const newPriority = ref<Priority>('medium')
+const newDueDate = ref<string | null>(null)
+const newTaskTags = ref<string[]>([])
+const newTagInput = ref('')
+const showTagInput = ref(false)
+
+// Search
+const searchOpen = ref(false)
+const searchKeyword = ref('')
+const searchDone = ref(false)
+const searchResults = ref<Todo[]>([])
+const searchHistory = ref<string[]>([])
+
+// Filter
+const showFilterPanel = ref(false)
+const filters = ref(new Set<string>())
+const sortBy = ref('created')
+
+const undoCount = computed(() => undoStore.undoStack.length)
+
 const sortedLists = computed(() => {
-  return [...listStore.lists].sort((a, b) => {
-    if (a.id === defaultListId.value) return -1
-    if (b.id === defaultListId.value) return 1
+  const lists = [...listStore.lists]
+  lists.sort((a, b) => {
+    if (a.isDefault) return -1
+    if (b.isDefault) return 1
     return a.sortOrder - b.sortOrder
   })
+  return lists
 })
 
-const activeTodos = computed(() => todoStore.todosByList(activeListId.value))
+const activeListName = computed(() => {
+  const list = listStore.lists.find(l => l.id === activeListId.value)
+  return list?.name || '默认列表'
+})
+
+const filteredActiveTodos = computed(() => {
+  let todos = todoStore.todosByList(activeListId.value).filter(t => !t.completed && !t.deleted)
+  if (filters.value.has('high') || filters.value.has('medium') || filters.value.has('low')) {
+    todos = todos.filter(t => filters.value.has(t.priority))
+  }
+  if (filters.value.has('done')) {
+    return []
+  }
+  return todos
+})
+
+const filteredDoneTodos = computed(() => {
+  let todos = todoStore.todosByList(activeListId.value).filter(t => t.completed && !t.deleted)
+  if (filters.value.has('high') || filters.value.has('medium') || filters.value.has('low')) {
+    todos = todos.filter(t => filters.value.has(t.priority))
+  }
+  if (filters.value.has('active')) {
+    return []
+  }
+  return todos
+})
+
+const activeFilterCount = computed(() => filters.value.size)
 
 onMounted(async () => {
   await Promise.all([todoStore.loadTodos(), listStore.loadLists()])
-
-  // Ensure a default list exists
-  const existingDefault = listStore.lists.find(l => l.isDefault)
-  if (existingDefault) {
-    defaultListId.value = existingDefault.id
-  } else if (listStore.lists.length > 0) {
-    // Use first list as fallback default
-    defaultListId.value = listStore.lists[0].id
-  } else {
-    const list = await listStore.createList('默认列表')
-    defaultListId.value = list.id
+  if (listStore.lists.length === 0) {
+    await listStore.createList('默认列表')
   }
-
-  activeListId.value = defaultListId.value
+  if (!listStore.lists.find(l => l.id === activeListId.value)) {
+    activeListId.value = listStore.lists[0]?.id || 'default'
+  }
 })
 
-function priorityLabel(p: Priority): string {
-  const map: Record<Priority, string> = { high: '高', medium: '中', low: '低' }
-  return map[p] || '中'
+function getListCount(listId: string): number {
+  return todoStore.todosByList(listId).filter(t => !t.deleted && !t.completed).length
 }
 
-async function handleQuickAdd() {
+function selectList(id: string) {
+  activeListId.value = id
+  closeSidebar()
+}
+
+function openSidebar() { sidebarOpen.value = true }
+function closeSidebar() { sidebarOpen.value = false }
+
+function toggleFilter(f: string) {
+  filters.value.has(f) ? filters.value.delete(f) : filters.value.add(f)
+}
+function clearFilters() { filters.value.clear() }
+function cycleSort() {
+  const sorts = ['created', 'priority', 'dueDate', 'alpha']
+  const idx = sorts.indexOf(sortBy.value)
+  sortBy.value = sorts[(idx + 1) % sorts.length]
+}
+
+// New Task
+function openNewTask() {
+  newTaskOpen.value = true
+  newTitle.value = ''
+  newDetail.value = ''
+  newPriority.value = 'medium'
+  newDueDate.value = null
+  newTaskTags.value = []
+  showTagInput.value = false
+}
+function closeNewTask() { newTaskOpen.value = false }
+function addNewTag() {
+  const tag = newTagInput.value.trim()
+  if (tag && !newTaskTags.value.includes(tag)) {
+    newTaskTags.value.push(tag)
+  }
+  newTagInput.value = ''
+}
+function onNewDueChange(e: any) { newDueDate.value = e.detail.value || null }
+function focusDetail() { /* uni-app auto-focus handled by component */ }
+
+async function createFromOverlay() {
   const title = newTitle.value.trim()
   if (!title) return
-  await todoStore.createTodo({ title, priority: 'medium', listId: activeListId.value })
-  newTitle.value = ''
-}
-
-async function handleToggle(id: string) {
-  await todoStore.toggleComplete(id)
-}
-
-async function handleDelete(id: string) {
-  await todoStore.deleteTodo(id)
-}
-
-async function handleUndo() {
-  const rec = await undoStore.undo()
-  if (!rec) return
-  await todoStore.loadTodos()
-}
-
-// ── List tab interactions ──
-
-async function handleListLongPress(list: TodoList) {
-  const itemList: string[] = ['重命名']
-  if (list.id !== defaultListId.value) {
-    itemList.push('删除')
-  }
-  const res = await uni.showActionSheet({ itemList })
-  if (res.tapIndex === 0) {
-    handleRenameList(list)
-  } else if (res.tapIndex === 1 && list.id !== defaultListId.value) {
-    handleDeleteList(list)
-  }
-}
-
-async function handleRenameList(list: TodoList) {
-  const newName = await showPrompt('重命名列表', list.name)
-  if (newName && newName !== list.name) {
-    await listStore.updateList(list.id, { name: newName })
-  }
-}
-
-async function handleDeleteList(list: TodoList) {
-  const res = await uni.showModal({
-    title: '确认删除',
-    content: `确定要删除列表"${list.name}"吗？列表中的待办事项不会被删除。`
+  await todoStore.createTodo({
+    title,
+    priority: newPriority.value,
+    dueDate: newDueDate.value,
+    tags: newTaskTags.value,
+    detail: newDetail.value,
+    listId: activeListId.value
   })
-  if (!res.confirm) return
-  await listStore.deleteList(list.id)
-  if (activeListId.value === list.id) {
-    activeListId.value = defaultListId.value
+  closeNewTask()
+}
+
+// Search
+function openSearch() {
+  searchOpen.value = true
+  searchDone.value = false
+  searchKeyword.value = ''
+}
+function closeSearch() { searchOpen.value = false }
+function fillSearch(q: string) {
+  searchKeyword.value = q
+  doSearch()
+}
+async function doSearch() {
+  const q = searchKeyword.value.trim()
+  if (!q) return
+  if (!searchHistory.value.includes(q)) {
+    searchHistory.value.unshift(q)
+    if (searchHistory.value.length > 10) searchHistory.value.pop()
   }
+  searchDone.value = true
+  searchResults.value = await searchTodos(q)
 }
 
-async function startCreateList() {
-  const name = await showPrompt('新建列表', '')
-  if (!name) return
-  const list = await listStore.createList(name)
-  activeListId.value = list.id
+// Todo actions
+async function handleToggle(id: string) { await todoStore.toggleComplete(id) }
+async function handleUndo() { await undoStore.undo(); await todoStore.loadTodos() }
+
+function goDetail(id: string) { uni.navigateTo({ url: `/pages/detail/index?id=${id}` }) }
+function goAgent() { closeSidebar(); uni.navigateTo({ url: '/pages/agent/index' }) }
+function goSettings() { closeSidebar(); uni.navigateTo({ url: '/pages/settings/index' }) }
+
+function isOverdue(date: string): boolean {
+  return new Date(date) < new Date(new Date().toDateString())
 }
-
-// ── Prompt modal (reusable inline prompt) ──
-
-const promptVisible = ref(false)
-const promptTitle = ref('')
-const promptPlaceholder = ref('')
-const promptValue = ref('')
-let promptResolve: ((v: string | null) => void) | null = null
-
-function showPrompt(title: string, defaultValue: string = '', placeholder: string = '输入名称'): Promise<string | null> {
-  return new Promise(resolve => {
-    promptTitle.value = title
-    promptValue.value = defaultValue
-    promptPlaceholder.value = placeholder
-    promptVisible.value = true
-    promptResolve = resolve
-  })
-}
-
-function confirmPrompt() {
-  const v = promptValue.value.trim()
-  promptVisible.value = false
-  promptResolve?.(v || null)
-  promptResolve = null
-}
-
-function cancelPrompt() {
-  promptVisible.value = false
-  promptResolve?.(null)
-  promptResolve = null
-}
-
-function goDetail(id: string) {
-  uni.navigateTo({ url: `/pages/detail/index?id=${id}` })
-}
-
-function goSearch() {
-  uni.navigateTo({ url: '/pages/search/index' })
-}
-
-function goSettings() {
-  uni.navigateTo({ url: '/pages/settings/index' })
+function formatDue(date: string): string {
+  const d = new Date(date)
+  const today = new Date(new Date().toDateString())
+  const diff = Math.floor((d.getTime() - today.getTime()) / 86400000)
+  if (diff === 0) return '今天'
+  if (diff === 1) return '明天'
+  if (diff === -1) return '逾期 1 天'
+  if (diff < -1) return `逾期 ${-diff} 天`
+  return date
 }
 </script>
 
 <style scoped>
 .page-index {
-  padding: 30rpx;
+  position: relative;
   min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30rpx;
-}
-
-.title {
-  font-size: 48rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.header-actions {
-  display: flex;
-  gap: 20rpx;
-}
-
-.btn-icon {
-  padding: 10rpx 20rpx;
-  background: #fff;
-  border-radius: 8rpx;
-}
-
-.icon {
-  font-size: 24rpx;
-  color: #666;
-}
-
-/* ── Tab bar ── */
-
-.tab-bar {
-  display: flex;
-  flex-direction: row;
-  white-space: nowrap;
-  margin-bottom: 30rpx;
-}
-
-.tab {
-  display: inline-flex;
-  align-items: center;
-  padding: 14rpx 28rpx;
-  margin-right: 16rpx;
-  background: #fff;
-  border-radius: 10rpx;
-  flex-shrink: 0;
-}
-
-.tab.active {
-  background: #4a90d9;
-}
-
-.tab.active .tab-name {
-  color: #fff;
-}
-
-.tab-name {
-  font-size: 26rpx;
-  color: #333;
-}
-
-.add-tab {
-  background: #e8f0fe;
-}
-
-.add-tab .tab-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #4a90d9;
-}
-
-/* ── Quick add ── */
-
-.quick-add {
-  display: flex;
-  gap: 16rpx;
-  margin-bottom: 40rpx;
-}
-
-.quick-add-input {
-  flex: 1;
-  padding: 20rpx 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-}
-
-.quick-add-btn {
-  width: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #4a90d9;
-  border-radius: 12rpx;
-}
-
-.btn-text {
-  color: #fff;
-  font-size: 36rpx;
-  font-weight: bold;
-}
-
-/* ── Todo list ── */
-
-.todo-list {
+  background: var(--bg);
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
 }
 
-.todo-item {
-  display: flex;
-  align-items: center;
-  padding: 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  gap: 20rpx;
+/* Sidebar */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 45;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(0,0,0,0.3);
+  transition: opacity 0.25s;
 }
-
-.todo-check {
-  flex-shrink: 0;
+.sidebar-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
-
-.checkbox {
-  width: 44rpx;
-  height: 44rpx;
-  border: 2rpx solid #ddd;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-  color: #fff;
-}
-
-.checkbox.checked {
-  background: #4a90d9;
-  border-color: #4a90d9;
-}
-
-.todo-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.todo-title {
-  font-size: 30rpx;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.todo-meta {
-  display: flex;
-  gap: 16rpx;
-  margin-top: 8rpx;
-}
-
-.priority {
-  font-size: 22rpx;
-  padding: 2rpx 12rpx;
-  border-radius: 4rpx;
-}
-
-.priority-high {
-  background: #ffeaea;
-  color: #e74c3c;
-}
-
-.priority-medium {
-  background: #fff3e0;
-  color: #f39c12;
-}
-
-.priority-low {
-  background: #e8f5e9;
-  color: #27ae60;
-}
-
-.due-date {
-  font-size: 22rpx;
-  color: #999;
-}
-
-.todo-delete {
-  flex-shrink: 0;
-  padding: 10rpx 16rpx;
-}
-
-.delete-text {
-  font-size: 24rpx;
-  color: #e74c3c;
-}
-
-.empty-state {
+.sidebar {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: 480rpx;
+  background: rgba(255,255,255,0.92);
+  z-index: 46;
+  transform: translateX(-100%);
+  transition: transform 0.25s;
   display: flex;
   flex-direction: column;
+  box-shadow: 8rpx 0 48rpx rgba(0,0,0,0.08);
+}
+.sidebar.open {
+  transform: translateX(0);
+}
+.sidebar-header {
+  height: 96rpx;
+  display: flex;
   align-items: center;
-  padding-top: 200rpx;
+  padding: 0 24rpx;
   gap: 16rpx;
 }
-
-.empty-text {
-  font-size: 32rpx;
-  color: #999;
-}
-
-.empty-hint {
-  font-size: 24rpx;
-  color: #bbb;
-}
-
-.undo-bar {
-  position: fixed;
-  bottom: 60rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 16rpx 48rpx;
-  background: #333;
-  border-radius: 40rpx;
-}
-
-.undo-text {
-  color: #fff;
-  font-size: 28rpx;
-}
-
-/* ── Prompt modal ── */
-
-.prompt-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+.collapse-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  font-size: 32rpx;
+  color: var(--text-3);
+}
+.app-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 8rpx 16rpx;
+}
+.sidebar-spacer {
+  flex: 0 0 35%;
+  min-height: 80rpx;
 }
 
-.prompt-dialog {
-  width: 560rpx;
-  background: #fff;
+/* Tree */
+.tree-group { margin-bottom: 8rpx; }
+.tree-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 20rpx;
   border-radius: 16rpx;
-  padding: 40rpx 36rpx 30rpx;
+  color: var(--text-3);
+  font-size: 22rpx;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+.tree-chevron {
+  font-size: 20rpx;
+  transition: transform 0.2s;
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 14rpx 20rpx 14rpx 48rpx;
+  border-radius: 16rpx;
+  color: var(--text-2);
+  font-size: 26rpx;
+  margin-bottom: 2rpx;
+}
+.tree-item:active, .tree-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.tree-icon { font-size: 24rpx; }
+.tree-name { flex: 1; }
+.count {
+  font-size: 20rpx;
+  color: var(--text-3);
+  background: var(--input-bg);
+  padding: 2rpx 12rpx;
+  border-radius: 16rpx;
 }
 
-.prompt-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  display: block;
-  margin-bottom: 24rpx;
+/* Nav Items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 16rpx;
+  color: var(--text-2);
+  font-size: 26rpx;
+  font-weight: 500;
+  margin-bottom: 2rpx;
+}
+.nav-item:active, .nav-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
-.prompt-input {
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 24rpx 32rpx 80rpx;
+}
+
+/* Filter Dropdown */
+.filter-dropdown {
+  position: absolute;
+  top: 200rpx;
+  left: 32rpx;
+  min-width: 300rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 16rpx 48rpx rgba(0,0,0,0.12);
+  border: 1rpx solid var(--border);
+  z-index: 100;
+  overflow: hidden;
+}
+.dropdown-hd {
+  padding: 20rpx 24rpx 12rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  font-size: 26rpx;
+  color: var(--text-2);
+}
+.dropdown-item:active { background: var(--card-hover); }
+.dropdown-item.active { color: var(--primary); font-weight: 600; }
+.dropdown-ft {
+  padding: 16rpx 24rpx;
+  border-top: 1rpx solid var(--border-light);
+}
+.filter-count {
+  font-size: 18rpx;
+  background: var(--primary);
+  color: #fff;
+  padding: 0 8rpx;
+  border-radius: 12rpx;
+  margin-left: 4rpx;
+}
+
+/* Badge */
+.badge {
+  position: absolute;
+  top: -4rpx;
+  right: -4rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  border-radius: 14rpx;
+  background: var(--danger);
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 700;
+  line-height: 28rpx;
+  text-align: center;
+  padding: 0 6rpx;
+}
+
+/* Section */
+.section-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+.section-count {
+  font-size: 24rpx;
+  color: var(--text-3);
+}
+
+/* New Task Overlay */
+.new-task-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.new-task-overlay.open {
+  pointer-events: auto;
+  opacity: 1;
+}
+.new-task-top {
+  background: var(--card);
+  padding: 32rpx;
+  border-bottom: 1rpx solid var(--border-light);
+}
+.new-task-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+.new-task-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+.new-task-title-row input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 34rpx;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text);
+  padding: 8rpx 0;
+}
+.new-task-body {
+  flex: 1;
+  background: var(--bg);
+  padding: 24rpx 32rpx;
+}
+.new-task-body textarea {
   width: 100%;
-  padding: 20rpx 20rpx;
-  background: #f5f5f5;
-  border-radius: 10rpx;
-  font-size: 28rpx;
-  margin-bottom: 30rpx;
+  min-height: 240rpx;
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius);
+  padding: 24rpx;
+  font-size: 26rpx;
+  outline: none;
+  background: var(--card);
+  color: var(--text);
   box-sizing: border-box;
 }
 
-.prompt-actions {
+/* Search Overlay */
+.search-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 55;
   display: flex;
-  justify-content: flex-end;
-  gap: 24rpx;
+  flex-direction: column;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
-
-.prompt-btn {
-  padding: 14rpx 32rpx;
-  border-radius: 8rpx;
+.search-overlay.open {
+  pointer-events: auto;
+  opacity: 1;
 }
-
-.prompt-btn-primary {
-  background: #4a90d9;
+.search-blur-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(242,243,245,0.92);
 }
-
-.prompt-btn-text {
-  font-size: 28rpx;
-  color: #666;
+.search-overlay-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
-
-.primary-text {
-  color: #fff;
+.search-content {
+  flex: 1;
+  padding: 24rpx 32rpx;
+}
+.search-history { padding: 24rpx 32rpx; }
+.search-history-hd {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.search-history-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  font-size: 26rpx;
+  color: var(--text-2);
+  border-bottom: 1rpx solid var(--border-light);
 }
 </style>
