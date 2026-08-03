@@ -16,7 +16,7 @@
       --danger: #ef4444; --danger-light: rgba(239,68,68,0.08);
       --warning: #f59e0b; --warning-light: rgba(245,158,11,0.08);
       --success: #22c55e; --success-light: rgba(34,197,94,0.08);
-      --sidebar-bg: #fff; --sidebar-hover: #f2f3f5;
+      --sidebar-bg: rgba(255,255,255,0.45); --sidebar-hover: rgba(242,243,245,0.4);
       --sidebar-active: var(--primary-light);
       --sidebar-text: var(--text-2); --sidebar-active-text: var(--primary);
       --overlay: rgba(0,0,0,0.3);
@@ -37,7 +37,7 @@
       --danger: #f87171; --danger-light: rgba(248,113,113,0.12);
       --warning: #fbbf24; --warning-light: rgba(251,191,36,0.12);
       --success: #4ade80; --success-light: rgba(74,222,128,0.12);
-      --sidebar-bg: #18181b; --sidebar-hover: #27272a;
+      --sidebar-bg: rgba(24,24,27,0.45); --sidebar-hover: rgba(39,39,42,0.4);
       --sidebar-active: var(--primary-light);
       --sidebar-text: var(--text-3); --sidebar-active-text: var(--primary);
       --overlay: rgba(0,0,0,0.5);
@@ -63,10 +63,25 @@
 
     .app-layout { display: flex; flex: 1; overflow: hidden; position: relative; }
 
-    /* Sidebar overlay */
-    .sidebar-backdrop { position: absolute; inset: 0; background: var(--overlay); z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+    /* Sidebar overlay — transparent, just catches clicks */
+    .sidebar-backdrop { position: absolute; inset: 0; z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
     .sidebar-backdrop.visible { opacity: 1; pointer-events: auto; }
-    .sidebar { width: 240px; background: var(--sidebar-bg); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; position: absolute; top: 0; bottom: 0; z-index: 46; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.08); }
+    .sidebar {
+      width: 240px;
+      background: rgba(255,255,255,0.45);
+      -webkit-backdrop-filter: blur(40px) saturate(1.6);
+      backdrop-filter: blur(40px) saturate(1.6);
+      display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+      position: absolute; top: 0; bottom: 0; z-index: 46;
+      transform: translateX(-100%); transition: transform 0.25s ease;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+      border-right: 1px solid rgba(255,255,255,0.25);
+    }
+    [data-theme="dark"] .sidebar {
+      background: rgba(24,24,27,0.45);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+    }
     .sidebar.open { transform: translateX(0); }
     .sidebar.right { left: auto; right: 0; transform: translateX(100%); box-shadow: -4px 0 20px rgba(0,0,0,0.08); }
     .sidebar.right.open { transform: translateX(0); }
@@ -108,7 +123,14 @@
     .icon-btn:hover { background: var(--card-hover); color: var(--text); }
     .icon-btn i { width: 18px; height: 18px; }
     .icon-btn.danger:hover { background: var(--danger-light); color: var(--danger); }
-    .icon-btn .badge { position: absolute; top: 2px; right: 1px; min-width: 14px; height: 14px; border-radius: 7px; background: var(--badge-bg); color: var(--badge-text); font-size: 9px; font-weight: 700; line-height: 14px; text-align: center; padding: 0 3px; pointer-events: none; }
+    .icon-btn .badge {
+      position: absolute; top: 0; right: -2px;
+      min-width: auto; height: auto; border-radius: 0;
+      background: transparent; color: var(--text-3);
+      font-size: 9px; font-weight: 600; line-height: 1;
+      text-align: center; padding: 0;
+      pointer-events: none;
+    }
 
     .undo-redo { display: flex; gap: 2px; padding: 0 4px; border-right: 1px solid var(--border-light); margin-right: 4px; }
     .undo-redo .icon-btn:disabled { opacity: 0.3; cursor: default; }
@@ -118,25 +140,31 @@
     .toolbar { display: flex; align-items: center; padding: 8px 16px; gap: 6px; background: var(--card); border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
     .toolbar-spacer { flex: 1; }
 
-    /* Toolbar action buttons */
-    .toolbar-action { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; font-size: 12px; color: var(--text-2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    /* Toolbar action buttons — unified size */
+    .toolbar-action {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 28px; padding: 0;
+      border-radius: 6px; border: 1px solid var(--border); background: transparent;
+      font-size: 12px; color: var(--text-2); cursor: pointer;
+      transition: all 0.15s; flex-shrink: 0;
+    }
     .toolbar-action:hover { border-color: var(--primary); color: var(--primary); }
     .toolbar-action i { width: 14px; height: 14px; }
 
     /* AI typographic icon — unified color */
     .ai-icon {
       font-family: "SF Pro Rounded", -apple-system, "Helvetica Neue", sans-serif;
-      font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
+      font-weight: 800; letter-spacing: 0.5px;
       color: var(--primary);
-      position: relative;
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
     }
     .ai-icon::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
       height: 2px; background: var(--primary); border-radius: 1px; opacity: 0.4;
     }
-    /* Inside toolbar buttons: match size exactly */
-    .toolbar-action .ai-icon { font-size: 12px; }
-    .toolbar-action .ai-icon::after { height: 1.5px; }
+    /* Inside toolbar: same visual size as 14px lucide icon */
+    .toolbar-action .ai-icon { width: 14px; height: 14px; font-size: 11px; line-height: 1; }
+    .toolbar-action .ai-icon::after { bottom: 0; height: 1.5px; }
 
     .input-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
     .input-bar input { flex: 1; border: none; outline: none; font-size: 14px; background: var(--input-bg); padding: 8px 12px; border-radius: 8px; color: var(--text); }
@@ -197,10 +225,22 @@
 
     /* Dropdowns */
     .dropdown-wrap { position: relative; }
-    .dropdown-trigger { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); font-size: 12px; color: var(--text-2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    /* All toolbar buttons — unified icon-button size */
+    .dropdown-trigger {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 28px; padding: 0;
+      border-radius: 6px; border: 1px solid var(--border); background: var(--card);
+      font-size: 12px; color: var(--text-2); cursor: pointer;
+      transition: all 0.15s; flex-shrink: 0; position: relative;
+    }
     .dropdown-trigger:hover { border-color: var(--primary); color: var(--primary); }
     .dropdown-trigger i { width: 14px; height: 14px; }
-    .dropdown-trigger .count { background: var(--primary); color: #fff; font-size: 10px; padding: 0 5px; border-radius: 8px; font-weight: 700; }
+    .dropdown-trigger .count {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 14px; height: 14px; border-radius: 7px;
+      background: var(--primary); color: #fff; font-size: 9px;
+      font-weight: 700; line-height: 14px; text-align: center; padding: 0 3px;
+    }
     .dropdown-panel { position: absolute; top: calc(100% + 4px); left: 0; min-width: 200px; background: var(--dropdown-bg); border-radius: var(--radius); box-shadow: var(--dropdown-shadow); border: 1px solid var(--border); z-index: 100; display: none; overflow: hidden; }
     .dropdown-panel.open { display: block; }
     .dropdown-panel.right { left: auto; right: 0; }
@@ -366,9 +406,8 @@
         <!-- Toolbar: Filter + Sort + AI + Search -->
         <div class="toolbar">
           <div class="dropdown-wrap" id="filterDrop">
-            <button class="dropdown-trigger" onclick="toggleDropdown('filterDrop')">
+            <button class="dropdown-trigger" onclick="toggleDropdown('filterDrop')" title="筛选">
               <i data-lucide="filter"></i>
-              <span data-i18n="toolbar.filter">筛选</span>
               <span class="count" id="filterCount" style="display:none">0</span>
             </button>
             <div class="dropdown-panel" id="filterPanel">
@@ -387,12 +426,18 @@
             </div>
           </div>
           <div class="dropdown-wrap" id="sortDrop">
-            <button class="dropdown-trigger" onclick="toggleDropdown('sortDrop')"><i data-lucide="arrow-up-down"></i> <span data-i18n="toolbar.sort">排序</span></button>
+            <button class="dropdown-trigger" onclick="toggleDropdown('sortDrop')" title="排序"><i data-lucide="arrow-up-down"></i></button>
             <div class="dropdown-panel" id="sortPanel">
               <div class="dropdown-item active" data-sort="created" onclick="setSort(this)"><i data-lucide="check" class="check"></i><span data-i18n="sort.created">创建时间</span></div>
               <div class="dropdown-item" data-sort="priority" onclick="setSort(this)"><i data-lucide="check" class="check"></i><span data-i18n="sort.priority">优先级</span></div>
               <div class="dropdown-item" data-sort="dueDate" onclick="setSort(this)"><i data-lucide="check" class="check"></i><span data-i18n="sort.dueDate">截止日期</span></div>
               <div class="dropdown-item" data-sort="alpha" onclick="setSort(this)"><i data-lucide="check" class="check"></i><span data-i18n="sort.alpha">名称 A→Z</span></div>
+              <div class="dropdown-ft" style="justify-content:space-between;align-items:center">
+                <span style="font-size:11px;color:var(--text-3)" id="sortDirLabel">↑ 升序</span>
+                <button class="btn-ghost" style="font-size:12px;padding:3px 8px" onclick="toggleSortDir()">
+                  <i data-lucide="arrow-up-down" style="width:12px;height:12px"></i>
+                </button>
+              </div>
             </div>
           </div>
           <div class="toolbar-spacer"></div>
@@ -708,7 +753,7 @@
 </div>
 
 <script>
-let currentLang='zh',currentTheme='light',sidebarSide='left',currentPriority='medium',activeFilters=new Set(),activeSort='created',undoCount=12;
+let currentLang='zh',currentTheme='light',sidebarSide='left',currentPriority='medium',activeFilters=new Set(),activeSort='created',sortAsc=true,undoCount=12;
 let currentListId='default';
 let searchHistoryData=['项目报告','甲方','会议'];
 
@@ -816,6 +861,7 @@ function toggleFilter(el){el.classList.toggle('active');activeFilters.has(el.dat
 function clearFilters(){activeFilters.clear();document.querySelectorAll('#filterPanel .dropdown-item').forEach(el=>el.classList.remove('active'));updateFilterCount()}
 function updateFilterCount(){const b=document.getElementById('filterCount');b.style.display=activeFilters.size?'inline':'none';b.textContent=activeFilters.size}
 function setSort(el){el.closest('.dropdown-panel').querySelectorAll('.dropdown-item').forEach(i=>i.classList.remove('active'));el.classList.add('active');activeSort=el.dataset.sort}
+function toggleSortDir(){sortAsc=!sortAsc;document.getElementById('sortDirLabel').textContent=sortAsc?'↑ 升序':'↓ 降序'}
 
 function pickPriority(p){currentPriority=p;document.querySelectorAll('.new-task-meta .pill').forEach(btn=>btn.className='pill'+(btn.dataset.p===p?` active-${p[0]}`:''))}
 
