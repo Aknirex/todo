@@ -282,7 +282,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useTodoStore, useListStore, useUndoStore } from '@/stores'
 import { searchTodos } from '@/services/search'
 import type { Todo, Priority } from '@/types'
@@ -359,16 +359,6 @@ const filteredDoneTodos = computed(() => {
 })
 
 const activeFilterCount = computed(() => filters.value.size)
-
-onMounted(async () => {
-  await Promise.all([todoStore.loadTodos(), listStore.loadLists()])
-  if (listStore.lists.length === 0) {
-    await listStore.createList('默认列表')
-  }
-  if (!listStore.lists.find(l => l.id === activeListId.value)) {
-    activeListId.value = listStore.lists[0]?.id || 'default'
-  }
-})
 
 function getListCount(listId: string): number {
   return todoStore.todosByList(listId).filter(t => !t.deleted && !t.completed).length

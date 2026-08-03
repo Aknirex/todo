@@ -53,6 +53,7 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "aknirex-todo",
     "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "backgroundColor": "#f2f3f5",
+    "navigationStyle": "custom"
   }
 }
