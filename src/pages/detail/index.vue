@@ -1,17 +1,21 @@
 <template>
-  <view class="page-detail">
+  <view class="page-detail" :style="themeVars">
     <!-- Topbar -->
     <view class="topbar">
-      <view class="icon-btn" @tap="goBack">←</view>
+      <view class="icon-btn" @tap="goBack">
+        <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
+      </view>
       <text class="topbar-title">任务详情</text>
       <view class="topbar-actions">
         <view class="undo-redo">
           <view class="icon-btn" @tap="handleUndo">
-            <text>↩</text>
+            <AppIcon name="undo-2" :size="18" color="var(--text-2)" />
             <text v-if="undoCount > 0" class="badge">{{ undoCount }}</text>
           </view>
         </view>
-        <view class="icon-btn danger" @tap="handleDelete">🗑</view>
+        <view class="icon-btn danger" @tap="handleDelete">
+          <AppIcon name="trash-2" :size="18" color="var(--text-2)" />
+        </view>
       </view>
     </view>
 
@@ -19,7 +23,7 @@
       <!-- Basic Fields -->
       <view class="settings-group">
         <view class="settings-row">
-          <text class="label">标题</text>
+          <view class="label"><text>标题</text></view>
           <input
             class="field-input"
             v-model="form.title"
@@ -28,7 +32,7 @@
           />
         </view>
         <view class="settings-row">
-          <text class="label">优先级</text>
+          <view class="label"><text>优先级</text></view>
           <view style="display:flex;gap:6rpx">
             <view :class="['pill', form.priority === 'high' ? 'active-h' : '']" @tap="form.priority = 'high'">H</view>
             <view :class="['pill', form.priority === 'medium' ? 'active-m' : '']" @tap="form.priority = 'medium'">M</view>
@@ -36,13 +40,19 @@
           </view>
         </view>
         <view class="settings-row">
-          <text class="label">📅 截止日期</text>
+          <view class="label">
+            <AppIcon name="calendar" :size="14" color="var(--text-3)" />
+            <text>截止日期</text>
+          </view>
           <picker mode="date" :value="form.dueDate || ''" @change="onDateChange">
             <text class="value">{{ form.dueDate || '选择日期' }}</text>
           </picker>
         </view>
         <view class="settings-row">
-          <text class="label">🏷️ 标签</text>
+          <view class="label">
+            <AppIcon name="tag" :size="14" color="var(--text-3)" />
+            <text>标签</text>
+          </view>
           <view style="display:flex;gap:8rpx;flex-wrap:wrap;justify-content:flex-end">
             <text v-for="(tag, i) in form.tags" :key="i" class="todo-tag" @tap="removeTag(i)">{{ tag }} ×</text>
             <text class="todo-tag" style="background:var(--card-hover);color:var(--text-3)" @tap="showTagInput = !showTagInput">+ 添加</text>
@@ -71,7 +81,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useTodoStore, useUndoStore } from '@/stores'
+import { useTheme } from '@/composables/useTheme'
+import AppIcon from '@/components/AppIcon.vue'
 import type { Priority } from '@/types'
+
+const { themeVars } = useTheme()
 
 const todoStore = useTodoStore()
 const undoStore = useUndoStore()
@@ -115,10 +129,17 @@ function addTag() {
 function removeTag(i: number) { form.tags.splice(i, 1) }
 
 async function handleDelete() {
-  if (todoId.value) {
-    await todoStore.deleteTodo(todoId.value)
-    uni.navigateBack()
-  }
+  if (!todoId.value) return
+  uni.showModal({
+    title: '删除任务',
+    content: '删除后可通过撤销恢复',
+    confirmColor: '#ef4444',
+    success: async (res: any) => {
+      if (!res.confirm) return
+      await todoStore.deleteTodo(todoId.value)
+      uni.navigateBack()
+    }
+  })
 }
 
 async function handleUndo() {
@@ -184,17 +205,20 @@ function goBack() {
 }
 .badge {
   position: absolute;
-  top: -4rpx;
+  top: -2rpx;
   right: -4rpx;
-  min-width: 28rpx;
-  height: 28rpx;
-  border-radius: 14rpx;
-  background: var(--danger);
-  color: #fff;
+  min-width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-3);
   font-size: 18rpx;
-  font-weight: 700;
-  line-height: 28rpx;
+  font-weight: 600;
+  line-height: 1;
   text-align: center;
-  padding: 0 6rpx;
+  padding: 0;
+  pointer-events: none;
 }
 </style>
+
+

@@ -65,5 +65,14 @@ export const listRepository = {
   async delete(id: string): Promise<void> {
     const db = getDatabase()
     await db.executeSql('DELETE FROM list WHERE id = ? AND is_default = 0', [id])
+  },
+
+  async restore(list: TodoList): Promise<void> {
+    const db = getDatabase()
+    await db.executeSql(
+      `INSERT OR REPLACE INTO list (id, name, is_default, created_at, sort_order)
+       VALUES (?, ?, ?, ?, ?)`,
+      [list.id, list.name, list.isDefault ? 1 : 0, list.createdAt, list.sortOrder]
+    )
   }
 }

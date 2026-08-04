@@ -1,7 +1,9 @@
 <template>
-  <view class="page-agent">
+  <view class="page-agent" :style="themeVars">
     <view class="topbar">
-      <view class="icon-btn" @tap="goBack">←</view>
+      <view class="icon-btn" @tap="goBack">
+        <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
+      </view>
       <text class="topbar-title" style="display:flex;align-items:center;gap:12rpx">
         <text class="ai-icon" style="font-size:32rpx">AI</text>
         <text>Agent</text>
@@ -12,10 +14,12 @@
       <!-- Mode Switch -->
       <view class="agent-mode-switch">
         <view :class="['mode-tab', mode === 'decompose' ? 'active' : '']" @tap="mode = 'decompose'">
-          <text>📄 文本→任务</text>
+          <AppIcon name="file-text" :size="15" />
+          <text>文本→任务</text>
         </view>
         <view :class="['mode-tab', mode === 'summarize' ? 'active' : '']" @tap="mode = 'summarize'">
-          <text>📊 任务→文本</text>
+          <AppIcon name="chart-column" :size="15" />
+          <text>任务→文本</text>
         </view>
       </view>
 
@@ -25,7 +29,10 @@
         <text class="panel-desc">粘贴聊天记录、会议纪要，AI 自动拆解为待办</text>
 
         <view class="agent-scope">
-          <text class="scope-hd">📋 读取来源</text>
+          <view class="scope-hd">
+            <AppIcon name="book-open" :size="13" color="var(--text-3)" />
+            <text>读取来源</text>
+          </view>
           <picker :range="listNames" @change="onReadListChange">
             <view class="scope-select">{{ readListName }}</view>
           </picker>
@@ -53,8 +60,14 @@
             <text class="todo-tag" style="margin-left:auto">{{ item.priority }}</text>
           </view>
           <view class="agent-actions" style="margin-top:20rpx">
-            <view class="btn btn-primary" @tap="saveDecomposed">✓ 保存到任务列表</view>
-            <view class="btn btn-ghost" @tap="editDecomposed">✏️ 编辑后保存</view>
+            <view class="btn btn-primary" @tap="saveDecomposed">
+              <AppIcon name="check" :size="14" color="#fff" />
+              <text>保存到任务列表</text>
+            </view>
+            <view class="btn btn-ghost" @tap="editDecomposed">
+              <AppIcon name="pencil" :size="14" color="var(--primary)" />
+              <text>编辑后保存</text>
+            </view>
           </view>
         </view>
       </view>
@@ -65,7 +78,10 @@
         <text class="panel-desc">将待办整理成连贯的文本</text>
 
         <view class="agent-scope">
-          <text class="scope-hd">📋 读取来源</text>
+          <view class="scope-hd">
+            <AppIcon name="book-open" :size="13" color="var(--text-3)" />
+            <text>读取来源</text>
+          </view>
           <picker :range="listNames" @change="onSumListChange">
             <view class="scope-select">{{ sumListName }}</view>
           </picker>
@@ -88,8 +104,14 @@
           <text>{{ summaryText }}</text>
         </view>
         <view v-if="summaryText" class="agent-actions">
-          <view class="btn btn-primary" @tap="copySummary">📋 复制</view>
-          <view class="btn btn-outline" @tap="editSummary">✏️ 编辑</view>
+          <view class="btn btn-primary" @tap="copySummary">
+            <AppIcon name="clipboard-copy" :size="14" color="#fff" />
+            <text>复制</text>
+          </view>
+          <view class="btn btn-outline" @tap="editSummary">
+            <AppIcon name="pencil" :size="14" color="var(--text-2)" />
+            <text>编辑</text>
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -99,7 +121,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useTodoStore, useListStore, useAgentStore } from '@/stores'
+import { useTheme } from '@/composables/useTheme'
+import AppIcon from '@/components/AppIcon.vue'
 import type { CreateTodoInput, Priority } from '@/types'
+
+const { themeVars } = useTheme()
 
 const todoStore = useTodoStore()
 const listStore = useListStore()
@@ -223,7 +249,9 @@ function goBack() { uni.navigateBack() }
   font-size: 22rpx;
   font-weight: 600;
   color: var(--text-3);
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
   margin-bottom: 16rpx;
 }
 .scope-select {
@@ -241,3 +269,4 @@ function goBack() { uni.navigateBack() }
   margin-bottom: 16rpx;
 }
 </style>
+

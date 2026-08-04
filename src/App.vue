@@ -4,6 +4,12 @@ import { initDatabase } from '@/dal'
 import { useTodoStore, useListStore, useAgentStore, useUndoStore } from '@/stores'
 
 onLaunch(async () => {
+  // #ifdef H5
+  if (typeof document !== 'undefined') {
+    const stored = uni.getStorageSync('aknirex-theme')
+    document.documentElement.setAttribute('data-theme', stored === 'dark' ? 'dark' : 'light')
+  }
+  // #endif
   console.log('App Launch — initializing database...')
   await initDatabase()
 
@@ -50,10 +56,37 @@ onLaunch(async () => {
   --success-light: rgba(34,197,94,0.08);
   --input-bg: #f2f3f5;
   --checkbox-border: #c9cdd4;
+  --scrollbar-thumb: #d1d5db;
+  --overlay: rgba(0,0,0,0.3);
+  --dropdown-bg: #fff;
+  --dropdown-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  --sidebar-bg: rgba(255,255,255,0.45);
+  --sidebar-hover: rgba(242,243,245,0.4);
+  --sidebar-active: var(--primary-light);
+  --sidebar-active-text: var(--primary);
+  --search-blur: rgba(242,243,245,0.85);
   --radius: 10px;
   --radius-sm: 6px;
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+  --bg: #111113; --card: #1c1c1e; --card-hover: #252528;
+  --text: #e5e5e7; --text-2: #a1a1aa; --text-3: #71717a;
+  --border: #2e2e32; --border-light: #232326;
+  --primary: #3b82f6; --primary-hover: #60a5fa;
+  --primary-light: rgba(59,130,246,0.12); --primary-bg: rgba(59,130,246,0.1);
+  --danger: #f87171; --danger-light: rgba(248,113,113,0.12);
+  --warning: #fbbf24; --warning-light: rgba(251,191,36,0.12);
+  --success: #4ade80; --success-light: rgba(74,222,128,0.12);
+  --input-bg: #27272a; --checkbox-border: #52525b; --scrollbar-thumb: #3f3f46;
+  --overlay: rgba(0,0,0,0.5);
+  --dropdown-bg: #27272a; --dropdown-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  --sidebar-bg: rgba(24,24,27,0.45); --sidebar-hover: rgba(39,39,42,0.4);
+  --sidebar-active: var(--primary-light); --sidebar-active-text: var(--primary);
+  --search-blur: rgba(17,17,19,0.88);
+  --shadow: 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 page {
@@ -63,6 +96,11 @@ page {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   font-size: 28rpx;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 /* ===== Topbar ===== */
@@ -222,7 +260,6 @@ page {
   margin-bottom: 16rpx; box-shadow: var(--shadow); border-left: 6rpx solid var(--primary);
 }
 .provider-card:active { box-shadow: var(--shadow-lg); }
-.provider-card h4 { font-size: 28rpx; margin-bottom: 8rpx; display: flex; align-items: center; gap: 12rpx; }
 .provider-card .desc { font-size: 24rpx; color: var(--text-3); }
 .provider-card .price { font-size: 24rpx; color: var(--primary); font-weight: 600; margin-top: 8rpx; }
 
@@ -235,8 +272,7 @@ page {
 }
 .mode-tab.active { background: var(--primary-light); color: var(--primary); }
 .agent-panel { background: var(--card); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
-.agent-panel h4 { font-size: 30rpx; font-weight: 600; margin-bottom: 8rpx; }
-.agent-panel p { font-size: 24rpx; color: var(--text-3); margin-bottom: 24rpx; }
+.agent-panel .panel-desc { font-size: 24rpx; color: var(--text-3); margin-bottom: 24rpx; }
 .agent-textarea {
   width: 100%; min-height: 200rpx; border: 1rpx solid var(--border); border-radius: 16rpx;
   padding: 20rpx 24rpx; font-size: 26rpx; outline: none; background: var(--input-bg);
@@ -248,7 +284,6 @@ page {
   margin-top: 24rpx; padding: 24rpx; border-radius: 16rpx;
   border: 2rpx dashed var(--border); background: var(--card-hover);
 }
-.agent-result h5 { font-size: 24rpx; font-weight: 600; color: var(--text-3); margin-bottom: 16rpx; }
 .result-item {
   display: flex; align-items: center; gap: 16rpx; padding: 12rpx 0;
   border-bottom: 1rpx solid var(--border-light); font-size: 26rpx;
@@ -259,10 +294,6 @@ page {
   border: 1rpx solid var(--border); font-size: 26rpx; line-height: 1.8; white-space: pre-wrap;
 }
 .agent-scope { background: var(--card-hover); border-radius: 16rpx; padding: 28rpx; margin-bottom: 24rpx; }
-.agent-scope h5 {
-  font-size: 22rpx; font-weight: 600; color: var(--text-3); margin-bottom: 16rpx;
-  text-transform: uppercase; letter-spacing: 0.6rpx; display: flex; align-items: center; gap: 10rpx;
-}
 
 /* ===== Buttons ===== */
 .btn { padding: 16rpx 32rpx; border-radius: 16rpx; border: none; font-size: 26rpx; font-weight: 600; display: inline-flex; align-items: center; gap: 10rpx; }
@@ -284,12 +315,22 @@ page {
 
 /* ===== Empty State ===== */
 .empty { text-align: center; padding: 96rpx 40rpx; color: var(--text-3); }
-.empty p { font-size: 26rpx; }
 
 /* ===== Badge ===== */
 .badge {
-  position: absolute; top: -4rpx; right: -4rpx; min-width: 28rpx; height: 28rpx;
-  border-radius: 14rpx; background: var(--danger); color: #fff; font-size: 18rpx;
-  font-weight: 700; line-height: 28rpx; text-align: center; padding: 0 6rpx;
+  position: absolute;
+  top: -2rpx;
+  right: -4rpx;
+  min-width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 18rpx;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  padding: 0;
+  pointer-events: none;
 }
 </style>

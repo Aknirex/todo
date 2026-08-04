@@ -1,24 +1,35 @@
 <template>
-  <view class="page-search">
-    <!-- Search input -->
-    <view class="search-bar">
-      <input
-        class="search-input"
-        v-model="keyword"
-        placeholder="搜索任务标题、详情或标签..."
-        @input="onInput"
-        confirm-type="search"
-      />
-      <view v-if="keyword" class="search-clear" @tap="clearSearch">
-        <text>✕</text>
+  <view class="page-search" :style="themeVars">
+    <!-- Topbar -->
+    <view class="topbar">
+      <view class="icon-btn" @tap="goBack">
+        <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
       </view>
+      <text class="topbar-title">搜索</text>
     </view>
+
+    <!-- Search input -->
+    <view class="search-area">
+      <view class="search-bar">
+        <AppIcon name="search" :size="16" color="var(--text-3)" />
+        <input
+          class="search-input"
+          v-model="keyword"
+          placeholder="搜索任务标题、详情或标签..."
+          @input="onInput"
+          confirm-type="search"
+        />
+        <view v-if="keyword" class="search-clear" @tap="clearSearch">
+          <AppIcon name="x" :size="14" color="var(--text-3)" />
+        </view>
+      </view>
 
     <!-- Filter toggle -->
     <view class="filter-toggle" @tap="showFilters = !showFilters">
-      <text class="filter-toggle-text">
-        筛选条件 {{ showFilters ? '▲' : '▼' }}
-      </text>
+      <view class="filter-toggle-text">
+        筛选条件
+        <AppIcon name="chevron-down" :size="12" color="var(--text-3)" :style="{ transform: showFilters ? 'rotate(180deg)' : 'rotate(0)' }" />
+      </view>
       <text v-if="activeFilterCount > 0" class="filter-badge">{{ activeFilterCount }}</text>
     </view>
 
@@ -138,12 +149,17 @@
       </view>
     </view>
   </view>
+  </view>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { searchTodos } from '@/services/search'
+import { useTheme } from '@/composables/useTheme'
+import AppIcon from '@/components/AppIcon.vue'
 import type { Todo, Priority, TodoFilter } from '@/types'
+
+const { themeVars } = useTheme()
 
 const keyword = ref('')
 const results = ref<Todo[]>([])
@@ -280,20 +296,28 @@ watch(
 function goDetail(id: string) {
   uni.navigateTo({ url: `/pages/detail/index?id=${id}` })
 }
+
+function goBack() { uni.navigateBack() }
 </script>
 
 <style scoped>
 .page-search {
-  padding: 30rpx;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.search-area {
+  padding: 30rpx;
 }
 
 .search-bar {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-radius: 12rpx;
+  gap: 16rpx;
+  background: var(--input-bg);
+  border-radius: 16rpx;
   padding: 0 24rpx;
   margin-bottom: 20rpx;
 }
@@ -302,6 +326,7 @@ function goDetail(id: string) {
   flex: 1;
   padding: 22rpx 0;
   font-size: 28rpx;
+  color: var(--text);
 }
 
 .search-clear {
@@ -313,18 +338,23 @@ function goDetail(id: string) {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
+  background: var(--card);
+  border-radius: var(--radius);
   margin-bottom: 20rpx;
+  box-shadow: var(--shadow);
 }
 
 .filter-toggle-text {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   font-size: 26rpx;
-  color: #666;
+  color: var(--text-2);
+  transition: all 0.2s;
 }
 
 .filter-badge {
-  background: #4a90d9;
+  background: var(--primary);
   color: #fff;
   font-size: 22rpx;
   padding: 4rpx 14rpx;
@@ -332,10 +362,11 @@ function goDetail(id: string) {
 }
 
 .filter-panel {
-  background: #fff;
-  border-radius: 12rpx;
+  background: var(--card);
+  border-radius: var(--radius);
   padding: 24rpx;
   margin-bottom: 20rpx;
+  box-shadow: var(--shadow);
 }
 
 .filter-row {
@@ -344,7 +375,7 @@ function goDetail(id: string) {
 
 .filter-label {
   font-size: 26rpx;
-  color: #666;
+  color: var(--text-3);
   margin-bottom: 14rpx;
   display: block;
 }
@@ -357,47 +388,47 @@ function goDetail(id: string) {
 
 .filter-chip {
   padding: 12rpx 28rpx;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
   font-size: 24rpx;
-  background: #f5f5f5;
-  color: #666;
+  background: var(--input-bg);
+  color: var(--text-2);
   border: 2rpx solid transparent;
 }
 
 .filter-chip.active {
-  background: #e8f0fe;
-  color: #4a90d9;
-  border-color: #4a90d9;
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .filter-chip.chip-active.active {
-  background: #e8f5e9;
-  color: #27ae60;
-  border-color: #27ae60;
+  background: var(--success-light);
+  color: var(--success);
+  border-color: var(--success);
 }
 
 .filter-chip.chip-done.active {
-  background: #f3e5f5;
-  color: #8e44ad;
-  border-color: #8e44ad;
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .filter-chip.chip-high.active {
-  background: #ffeaea;
-  color: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .filter-chip.chip-medium.active {
-  background: #fff3e0;
-  color: #f39c12;
-  border-color: #f39c12;
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning);
 }
 
 .filter-chip.chip-low.active {
-  background: #e8f5e9;
-  color: #27ae60;
-  border-color: #27ae60;
+  background: var(--success-light);
+  color: var(--success);
+  border-color: var(--success);
 }
 
 .date-range {
@@ -409,16 +440,16 @@ function goDetail(id: string) {
 .date-picker {
   flex: 1;
   padding: 16rpx 20rpx;
-  background: #f5f5f5;
-  border-radius: 8rpx;
+  background: var(--input-bg);
+  border-radius: 12rpx;
   font-size: 24rpx;
-  color: #333;
+  color: var(--text-2);
   text-align: center;
 }
 
 .date-sep {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-3);
 }
 
 .filter-clear-date {
@@ -427,26 +458,26 @@ function goDetail(id: string) {
 
 .clear-link {
   font-size: 24rpx;
-  color: #4a90d9;
+  color: var(--primary);
 }
 
 .filter-reset {
   padding: 16rpx;
   text-align: center;
-  border-top: 1rpx solid #eee;
+  border-top: 1rpx solid var(--border-light);
   margin-top: 8rpx;
 }
 
 .reset-text {
   font-size: 26rpx;
-  color: #e74c3c;
+  color: var(--danger);
 }
 
 .loading {
   padding: 80rpx 0;
   text-align: center;
   font-size: 26rpx;
-  color: #999;
+  color: var(--text-3);
 }
 
 .empty-state {
@@ -458,7 +489,7 @@ function goDetail(id: string) {
 
 .empty-text {
   font-size: 28rpx;
-  color: #999;
+  color: var(--text-3);
 }
 
 .results {
@@ -468,9 +499,10 @@ function goDetail(id: string) {
 }
 
 .result-item {
-  background: #fff;
-  border-radius: 12rpx;
+  background: var(--card);
+  border-radius: var(--radius);
   padding: 24rpx;
+  box-shadow: var(--shadow);
 }
 
 .result-header {
@@ -482,7 +514,7 @@ function goDetail(id: string) {
 
 .result-title {
   font-size: 30rpx;
-  color: #333;
+  color: var(--text);
   flex: 1;
   min-width: 0;
 }
@@ -496,24 +528,24 @@ function goDetail(id: string) {
 .result-priority {
   font-size: 22rpx;
   padding: 4rpx 14rpx;
-  border-radius: 4rpx;
+  border-radius: 8rpx;
   flex-shrink: 0;
   margin-left: 16rpx;
 }
 
 .result-priority.p-high {
-  background: #ffeaea;
-  color: #e74c3c;
+  background: var(--danger-light);
+  color: var(--danger);
 }
 
 .result-priority.p-medium {
-  background: #fff3e0;
-  color: #f39c12;
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .result-priority.p-low {
-  background: #e8f5e9;
-  color: #27ae60;
+  background: var(--success-light);
+  color: var(--success);
 }
 
 .result-meta {
@@ -526,33 +558,34 @@ function goDetail(id: string) {
 .result-status {
   font-size: 22rpx;
   padding: 2rpx 10rpx;
-  border-radius: 4rpx;
+  border-radius: 8rpx;
 }
 
 .result-status.done {
-  background: #f3e5f5;
-  color: #8e44ad;
+  background: var(--success-light);
+  color: var(--success);
 }
 
 .result-status.pending {
-  background: #e8f0fe;
-  color: #4a90d9;
+  background: var(--primary-bg);
+  color: var(--primary);
 }
 
 .result-date {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-3);
 }
 
 .result-tags {
   font-size: 22rpx;
-  color: #4a90d9;
+  color: var(--primary);
 }
 
 .result-detail {
   font-size: 24rpx;
-  color: #888;
+  color: var(--text-3);
   margin-top: 8rpx;
   line-height: 1.5;
 }
 </style>
+

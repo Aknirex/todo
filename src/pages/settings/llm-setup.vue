@@ -1,7 +1,9 @@
 <template>
-  <view class="page-llm">
+  <view class="page-llm" :style="themeVars">
     <view class="topbar">
-      <view class="icon-btn" @tap="goBack">←</view>
+      <view class="icon-btn" @tap="goBack">
+        <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
+      </view>
       <text class="topbar-title">配置 AI</text>
     </view>
 
@@ -50,6 +52,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAgentStore } from '@/stores'
+import { useTheme } from '@/composables/useTheme'
+import AppIcon from '@/components/AppIcon.vue'
+
+const { themeVars } = useTheme()
 
 const agentStore = useAgentStore()
 

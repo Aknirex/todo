@@ -1,7 +1,9 @@
 <template>
-  <view class="page-settings">
+  <view class="page-settings" :style="themeVars">
     <view class="topbar">
-      <view class="icon-btn" @tap="goBack">←</view>
+      <view class="icon-btn" @tap="goBack">
+        <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
+      </view>
       <text class="topbar-title">设置</text>
     </view>
 
@@ -10,19 +12,29 @@
       <view class="settings-group">
         <text class="settings-group-hd">AI 配置</text>
         <view class="settings-row" @tap="goLlmSetup">
-          <text class="label">🔑 API Key</text>
-          <text class="value">
-            <text v-if="agentStore.configured" style="color:var(--success)">已配置 ✓</text>
+          <view class="label">
+            <AppIcon name="key" :size="16" color="var(--text-3)" />
+            <text>API Key</text>
+          </view>
+          <view class="value">
+            <text v-if="agentStore.configured" style="color:var(--success)">已配置</text>
             <text v-else>未配置</text>
-          </text>
+            <AppIcon v-if="agentStore.configured" name="circle-check" :size="14" color="var(--success)" />
+          </view>
         </view>
         <view class="settings-row">
-          <text class="label">☁️ 提供商</text>
-          <text class="value">{{ agentStore.config.provider || '—' }}</text>
+          <view class="label">
+            <AppIcon name="cloud" :size="16" color="var(--text-3)" />
+            <text>提供商</text>
+          </view>
+          <view class="value">{{ agentStore.config.provider || '—' }}</view>
         </view>
         <view class="settings-row">
-          <text class="label">🧠 模型</text>
-          <text class="value">{{ agentStore.config.model || '—' }}</text>
+          <view class="label">
+            <AppIcon name="cpu" :size="16" color="var(--text-3)" />
+            <text>模型</text>
+          </view>
+          <view class="value">{{ agentStore.config.model || '—' }}</view>
         </view>
       </view>
 
@@ -30,12 +42,18 @@
       <view class="settings-group">
         <text class="settings-group-hd">Agent API</text>
         <view class="settings-row">
-          <text class="label">🖥️ API 服务</text>
-          <text class="value">未启动</text>
+          <view class="label">
+            <AppIcon name="server" :size="16" color="var(--text-3)" />
+            <text>API 服务</text>
+          </view>
+          <view class="value">未启动</view>
         </view>
         <view class="settings-row">
-          <text class="label">🔑 API Key</text>
-          <text class="value">点击生成 ›</text>
+          <view class="label">
+            <AppIcon name="key-round" :size="16" color="var(--text-3)" />
+            <text>API Key</text>
+          </view>
+          <view class="value">点击生成</view>
         </view>
       </view>
 
@@ -43,8 +61,11 @@
       <view class="settings-group">
         <text class="settings-group-hd">外观</text>
         <view class="settings-row" @tap="toggleTheme">
-          <text class="label">🌙 深色模式</text>
-          <view :class="['toggle', isDark ? 'on' : '']"></view>
+          <view class="label">
+            <AppIcon name="moon" :size="16" color="var(--text-3)" />
+            <text>深色模式</text>
+          </view>
+          <view :class="['toggle', isDarkMode ? 'on' : '']"></view>
         </view>
       </view>
 
@@ -52,12 +73,18 @@
       <view class="settings-group">
         <text class="settings-group-hd">数据</text>
         <view class="settings-row">
-          <text class="label">↩️ 撤销历史</text>
-          <text class="value">{{ undoStore.undoStack.length }} / 50</text>
+          <view class="label">
+            <AppIcon name="undo-2" :size="16" color="var(--text-3)" />
+            <text>撤销历史</text>
+          </view>
+          <view class="value">{{ undoStore.undoStack.length }} / 50</view>
         </view>
         <view class="settings-row" @tap="goExport">
-          <text class="label">📥 导出数据</text>
-          <text class="value">›</text>
+          <view class="label">
+            <AppIcon name="download" :size="16" color="var(--text-3)" />
+            <text>导出数据</text>
+          </view>
+          <view class="value">›</view>
         </view>
       </view>
 
@@ -65,12 +92,18 @@
       <view class="settings-group">
         <text class="settings-group-hd">关于</text>
         <view class="settings-row">
-          <text class="label">ℹ️ 版本</text>
-          <text class="value">v0.1.0</text>
+          <view class="label">
+            <AppIcon name="info" :size="16" color="var(--text-3)" />
+            <text>版本</text>
+          </view>
+          <view class="value">v0.1.0</view>
         </view>
         <view class="settings-row" @tap="goLicense">
-          <text class="label">⚖️ 许可协议</text>
-          <text class="value">›</text>
+          <view class="label">
+            <AppIcon name="scale" :size="16" color="var(--text-3)" />
+            <text>许可协议</text>
+          </view>
+          <view class="value">›</view>
         </view>
       </view>
     </scroll-view>
@@ -78,21 +111,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useAgentStore, useUndoStore } from '@/stores'
+import { useTheme } from '@/composables/useTheme'
+import AppIcon from '@/components/AppIcon.vue'
+
+const { themeVars, isDarkMode, toggleTheme } = useTheme()
 
 const agentStore = useAgentStore()
 const undoStore = useUndoStore()
-const isDark = ref(false)
 
 onMounted(async () => {
   await agentStore.loadConfig()
 })
-
-function toggleTheme() {
-  isDark.value = !isDark.value
-  // UniApp theme switching would go here
-}
 
 function goBack() { uni.navigateBack() }
 function goLlmSetup() { uni.navigateTo({ url: '/pages/settings/llm-setup' }) }
@@ -112,3 +143,7 @@ function goLicense() { uni.navigateTo({ url: '/pages/settings/license' }) }
   padding: 24rpx 32rpx;
 }
 </style>
+
+
+
+

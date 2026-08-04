@@ -96,6 +96,23 @@ export const todoRepository = {
     )
   },
 
+  async restore(todo: Todo): Promise<void> {
+    const db = getDatabase()
+    await db.executeSql(
+      `INSERT OR REPLACE INTO todo (id, title, priority, due_date, tags, detail,
+       completed, list_id, created_at, updated_at, deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [todo.id, todo.title, todo.priority, todo.dueDate,
+       JSON.stringify(todo.tags), todo.detail, todo.completed ? 1 : 0,
+       todo.listId, todo.createdAt, todo.updatedAt, todo.deleted ? 1 : 0]
+    )
+  },
+
+  async hardDelete(id: string): Promise<void> {
+    const db = getDatabase()
+    await db.executeSql('DELETE FROM todo WHERE id = ?', [id])
+  },
+
   async toggleComplete(id: string): Promise<void> {
     const db = getDatabase()
     await db.executeSql(

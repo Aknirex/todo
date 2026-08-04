@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { uuid } from '@/utils'
-import { undoRepository } from '@/dal'
+import { undoRepository, todoRepository, listRepository } from '@/dal'
 import type { AgentActionType, EntityType, UndoRecord } from '@/types'
 
 export const useUndoStore = defineStore('undo', () => {
@@ -35,6 +35,23 @@ export const useUndoStore = defineStore('undo', () => {
     const rec = undoStack.value.pop()
     if (!rec) return null
     await undoRepository.delete(rec.id).catch(() => {})
+    try {
+      if (rec.entityType === 'todo') {
+        if (rec.beforeState) {
+          await todoRepository.restore(JSON.parse(rec.beforeState))
+        } else {
+          await todoRepository.hardDelete(rec.entityId)
+        }
+      } else if (rec.entityType === 'list') {
+        if (rec.beforeState) {
+          await listRepository.restore(JSON.parse(rec.beforeState))
+        } else {
+          await listRepository.delete(rec.entityId)
+        }
+      }
+    } catch (e) {
+      console.error('undo apply failed:', e)
+    }
     return rec
   }
 

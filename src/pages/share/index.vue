@@ -1,5 +1,14 @@
 <template>
-  <view class="page-share">
+  <view class="page-share" :style="themeVars">
+    <!-- Topbar -->
+    <view class="topbar">
+      <view class="icon-btn" @tap="goBack">
+        <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
+      </view>
+      <text class="topbar-title">导出数据</text>
+    </view>
+
+    <view class="share-content">
     <!-- Format selector -->
     <view class="section">
       <text class="section-label">选择导出格式</text>
@@ -71,8 +80,10 @@
     <!-- Actions -->
     <view class="actions" v-if="selectedIds.size > 0">
       <view class="btn-copy" @tap="handleCopy">
+        <AppIcon name="clipboard-copy" :size="16" color="#fff" />
         <text class="btn-text">复制到剪贴板</text>
       </view>
+    </view>
     </view>
   </view>
 </template>
@@ -81,7 +92,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTodoStore } from '@/stores'
 import { exportAsText, exportAsMarkdown } from '@/services/export'
+import { useTheme } from '@/composables/useTheme'
+import AppIcon from '@/components/AppIcon.vue'
 import type { Priority } from '@/types'
+
+const { themeVars } = useTheme()
 
 const todoStore = useTodoStore()
 const format = ref<'text' | 'markdown'>('text')
@@ -144,13 +159,20 @@ function handleCopy() {
     }
   })
 }
+
+function goBack() { uni.navigateBack() }
 </script>
 
 <style scoped>
 .page-share {
-  padding: 30rpx;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.share-content {
+  padding: 30rpx;
 }
 
 .section {
@@ -159,8 +181,8 @@ function handleCopy() {
 
 .section-label {
   font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: var(--text-2);
   margin-bottom: 16rpx;
   display: block;
 }
@@ -174,17 +196,18 @@ function handleCopy() {
   flex: 1;
   padding: 24rpx;
   text-align: center;
-  background: #fff;
-  border-radius: 12rpx;
+  background: var(--card);
+  border-radius: var(--radius);
   font-size: 28rpx;
-  color: #666;
+  color: var(--text-2);
   border: 2rpx solid transparent;
+  box-shadow: var(--shadow);
 }
 
 .format-chip.active {
-  border-color: #4a90d9;
-  color: #4a90d9;
-  background: #e8f0fe;
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
 }
 
 .select-actions {
@@ -195,7 +218,7 @@ function handleCopy() {
 
 .select-link {
   font-size: 24rpx;
-  color: #4a90d9;
+  color: var(--primary);
 }
 
 .todo-list {
@@ -210,15 +233,16 @@ function handleCopy() {
   display: flex;
   align-items: center;
   padding: 20rpx 24rpx;
-  background: #fff;
-  border-radius: 10rpx;
+  background: var(--card);
+  border-radius: var(--radius);
   gap: 20rpx;
+  box-shadow: var(--shadow);
 }
 
 .todo-checkbox {
   width: 40rpx;
   height: 40rpx;
-  border: 2rpx solid #ddd;
+  border: 2rpx solid var(--checkbox-border);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -229,8 +253,8 @@ function handleCopy() {
 }
 
 .todo-checkbox.checked {
-  background: #4a90d9;
-  border-color: #4a90d9;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .todo-content {
@@ -240,7 +264,7 @@ function handleCopy() {
 
 .todo-title {
   font-size: 28rpx;
-  color: #333;
+  color: var(--text);
   display: block;
 }
 
@@ -254,48 +278,48 @@ function handleCopy() {
 .todo-priority {
   font-size: 20rpx;
   padding: 2rpx 10rpx;
-  border-radius: 4rpx;
+  border-radius: 8rpx;
 }
 
 .todo-priority.p-high {
-  background: #ffeaea;
-  color: #e74c3c;
+  background: var(--danger-light);
+  color: var(--danger);
 }
 
 .todo-priority.p-medium {
-  background: #fff3e0;
-  color: #f39c12;
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .todo-priority.p-low {
-  background: #e8f5e9;
-  color: #27ae60;
+  background: var(--success-light);
+  color: var(--success);
 }
 
 .todo-date {
   font-size: 20rpx;
-  color: #999;
+  color: var(--text-3);
 }
 
 .todo-tags {
   font-size: 20rpx;
-  color: #4a90d9;
+  color: var(--primary);
 }
 
 .todo-status {
   font-size: 20rpx;
   padding: 2rpx 10rpx;
-  border-radius: 4rpx;
+  border-radius: 8rpx;
 }
 
 .todo-status.done {
-  background: #f3e5f5;
-  color: #8e44ad;
+  background: var(--success-light);
+  color: var(--success);
 }
 
 .todo-status.pending {
-  background: #e8f0fe;
-  color: #4a90d9;
+  background: var(--primary-bg);
+  color: var(--primary);
 }
 
 .empty-hint {
@@ -305,18 +329,19 @@ function handleCopy() {
 
 .hint-text {
   font-size: 26rpx;
-  color: #bbb;
+  color: var(--text-3);
 }
 
 .preview-card {
-  background: #fff;
-  border-radius: 12rpx;
+  background: var(--card);
+  border-radius: var(--radius);
   padding: 24rpx;
+  box-shadow: var(--shadow);
 }
 
 .preview-content {
   font-size: 24rpx;
-  color: #555;
+  color: var(--text-2);
   line-height: 1.7;
   white-space: pre-wrap;
 }
@@ -327,14 +352,18 @@ function handleCopy() {
 
 .btn-copy {
   padding: 24rpx;
-  background: #4a90d9;
-  border-radius: 12rpx;
+  background: var(--primary);
+  border-radius: var(--radius);
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
 }
 
 .btn-text {
   color: #fff;
   font-size: 30rpx;
-  font-weight: bold;
+  font-weight: 600;
 }
 </style>

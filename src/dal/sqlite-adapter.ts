@@ -1,5 +1,28 @@
 type Row = Record<string, any>
 
+function splitValues(raw: string): string[] {
+  const out: string[] = []
+  let cur = ''
+  let inQuote = false
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i]
+    if (ch === "'") { inQuote = !inQuote; cur += ch }
+    else if (ch === ',' && !inQuote) { out.push(cur.trim()); cur = '' }
+    else cur += ch
+  }
+  out.push(cur.trim())
+  return out
+}
+
+function parseValue(val: string, params: any[], next: () => number): any {
+  if (val === '?') return params[next()]
+  if (/^datetime\(\s*'now'\s*\)$/i.test(val)) return new Date().toISOString()
+  if (/^[-+]?\d+$/.test(val)) return parseInt(val, 10)
+  if (val.length >= 2 && val.startsWith("'") && val.endsWith("'")) return val.slice(1, -1)
+  if (val === 'NULL' || val === 'null') return null
+  return val
+}
+
 class H5Database {
   private storageKey: string
   private tables: Map<string, Row[]>
@@ -15,9 +38,9 @@ class H5Database {
   private _load() {
     try {
       const storedVer = localStorage.getItem(this.versionKey)
-      if (storedVer !== '2') {
+      if (storedVer !== '3') {
         localStorage.removeItem(this.storageKey)
-        localStorage.setItem(this.versionKey, '2')
+        localStorage.setItem(this.versionKey, '3')
       }
       const raw = localStorage.getItem(this.storageKey)
       if (raw) {
@@ -56,11 +79,15 @@ class H5Database {
         const table = m[1]
         if (!this.tables.has(table)) this.tables.set(table, [])
         const rows = this.tables.get(table)!
-        const cm = trimmed.match(/\(([^)]+)\)\s*VALUES/i)
+        const cm = trimmed.match(/\(([^)]+)\)\s*VALUES\s*\(([\s\S]*?)\)\s*;?\s*$/i)
         if (cm) {
           const cols = cm[1].split(',').map(c => c.trim())
+          const vals = splitValues(cm[2])
           const row: Row = {}
-          cols.forEach((col, i) => { row[col] = params[i] ?? null })
+          let pi = 0
+          cols.forEach((col, i) => {
+            row[col] = parseValue(vals[i], params, () => pi++)
+          })
 
           if (isIgnore) {
             const pk = cols[0]
@@ -93,8 +120,11 @@ class H5Database {
         }
       }
       if (upper.includes('LIMIT')) {
-        const lm = trimmed.match(/LIMIT\s+(\d+)/i)
-        if (lm) rows = rows.slice(0, parseInt(lm[1]))
+        const lm = trimmed.match(/LIMIT\s+(\d+|\?)/i)
+        if (lm) {
+          const n = lm[1] === '?' ? Number(params[params.length - 1] ?? 0) : parseInt(lm[1])
+          if (Number.isFinite(n)) rows = rows.slice(0, n)
+        }
       }
       return { rows }
     }
