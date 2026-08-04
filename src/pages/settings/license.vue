@@ -4,7 +4,7 @@
       <view class="icon-btn" @tap="goBack">
         <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
       </view>
-      <text class="topbar-title">许可协议</text>
+      <text class="topbar-title">{{ $t('settings.license') }}</text>
     </view>
 
     <view class="license-content">

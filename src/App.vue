@@ -2,6 +2,7 @@
 import { onLaunch } from '@dcloudio/uni-app'
 import { initDatabase } from '@/dal'
 import { useTodoStore, useListStore, useAgentStore, useUndoStore } from '@/stores'
+import i18n from '@/locale'
 
 onLaunch(async () => {
   // #ifdef H5
@@ -25,7 +26,7 @@ onLaunch(async () => {
   ])
 
   if (listStore.lists.length === 0) {
-    await listStore.createList('默认列表')
+    await listStore.createList(i18n.global.t('sidebar.defaultList'))
   }
 
   await undoStore.loadFromDb()

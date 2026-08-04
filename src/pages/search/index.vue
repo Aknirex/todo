@@ -5,7 +5,7 @@
       <view class="icon-btn" @tap="goBack">
         <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
       </view>
-      <text class="topbar-title">搜索</text>
+      <text class="topbar-title">{{ $t('search.title') }}</text>
     </view>
 
     <!-- Search input -->
@@ -15,7 +15,7 @@
         <input
           class="search-input"
           v-model="keyword"
-          placeholder="搜索任务标题、详情或标签..."
+          :placeholder="$t('search.placeholderFull')"
           @input="onInput"
           confirm-type="search"
         />
@@ -27,7 +27,7 @@
     <!-- Filter toggle -->
     <view class="filter-toggle" @tap="showFilters = !showFilters">
       <view class="filter-toggle-text">
-        筛选条件
+        {{ $t('search.filterToggle') }}
         <AppIcon name="chevron-down" :size="12" color="var(--text-3)" :style="{ transform: showFilters ? 'rotate(180deg)' : 'rotate(0)' }" />
       </view>
       <text v-if="activeFilterCount > 0" class="filter-badge">{{ activeFilterCount }}</text>
@@ -37,7 +37,7 @@
     <view class="filter-panel" v-if="showFilters">
       <!-- Priority filter -->
       <view class="filter-row">
-        <text class="filter-label">优先级</text>
+        <text class="filter-label">{{ $t('filter.title') }}</text>
         <view class="filter-options">
           <view
             v-for="p in priorities"
@@ -45,71 +45,71 @@
             :class="['filter-chip', filter.priority === p.value ? 'active' : '', `chip-${p.value}`]"
             @tap="togglePriority(p.value)"
           >
-            <text>{{ p.label }}</text>
+            <text>{{ $t(PRIORITY_LABEL_KEYS[p.value]) }}</text>
           </view>
         </view>
       </view>
 
       <!-- Completed status filter -->
       <view class="filter-row">
-        <text class="filter-label">完成状态</text>
+        <text class="filter-label">{{ $t('search.status') }}</text>
         <view class="filter-options">
           <view
             :class="['filter-chip', filter.completed === undefined ? 'active' : '']"
             @tap="filter.completed = undefined"
           >
-            <text>全部</text>
+            <text>{{ $t('search.all') }}</text>
           </view>
           <view
             :class="['filter-chip', filter.completed === false ? 'active chip-active' : '']"
             @tap="filter.completed = false"
           >
-            <text>未完成</text>
+            <text>{{ $t('search.pending') }}</text>
           </view>
           <view
             :class="['filter-chip', filter.completed === true ? 'active chip-done' : '']"
             @tap="filter.completed = true"
           >
-            <text>已完成</text>
+            <text>{{ $t('search.done') }}</text>
           </view>
         </view>
       </view>
 
       <!-- Date range filter -->
       <view class="filter-row">
-        <text class="filter-label">日期范围</text>
+        <text class="filter-label">{{ $t('search.dateRange') }}</text>
         <view class="date-range">
           <picker mode="date" :value="filter.dueDateRange?.start || ''" @change="onStartDate">
             <view class="date-picker">
-              <text>{{ filter.dueDateRange?.start || '开始日期' }}</text>
+              <text>{{ filter.dueDateRange?.start || $t('search.startDate') }}</text>
             </view>
           </picker>
           <text class="date-sep">—</text>
           <picker mode="date" :value="filter.dueDateRange?.end || ''" @change="onEndDate">
             <view class="date-picker">
-              <text>{{ filter.dueDateRange?.end || '结束日期' }}</text>
+              <text>{{ filter.dueDateRange?.end || $t('search.endDate') }}</text>
             </view>
           </picker>
         </view>
         <view v-if="filter.dueDateRange" class="filter-clear-date" @tap="clearDateRange">
-          <text class="clear-link">清除</text>
+          <text class="clear-link">{{ $t('search.clearDate') }}</text>
         </view>
       </view>
 
       <!-- Reset filters -->
       <view class="filter-reset" @tap="resetFilters">
-        <text class="reset-text">重置筛选</text>
+        <text class="reset-text">{{ $t('search.reset') }}</text>
       </view>
     </view>
 
     <!-- Loading indicator -->
     <view class="loading" v-if="loading">
-      <text>搜索中...</text>
+      <text>{{ $t('search.loading') }}</text>
     </view>
 
     <!-- No results -->
     <view class="empty-state" v-if="!loading && keyword && results.length === 0">
-      <text class="empty-text">未找到匹配结果</text>
+      <text class="empty-text">{{ $t('search.noResultsFull') }}</text>
     </view>
 
     <!-- Results list -->
@@ -129,12 +129,12 @@
             >{{ seg.text }}</text>
           </text>
           <text :class="['result-priority', `p-${todo.priority}`]">
-            {{ priorityLabel(todo.priority) }}
+            {{ $t(PRIORITY_LABEL_KEYS[todo.priority]) }}
           </text>
         </view>
         <view class="result-meta">
-          <text v-if="todo.completed" class="result-status done">已完成</text>
-          <text v-else class="result-status pending">未完成</text>
+          <text v-if="todo.completed" class="result-status done">{{ $t('search.done') }}</text>
+          <text v-else class="result-status pending">{{ $t('search.pending') }}</text>
           <text v-if="todo.dueDate" class="result-date">{{ todo.dueDate }}</text>
           <text v-if="todo.tags.length > 0" class="result-tags">{{ todo.tags.join(', ') }}</text>
         </view>
@@ -167,10 +167,12 @@ const loading = ref(false)
 const showFilters = ref(false)
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+const PRIORITY_LABEL_KEYS: Record<string, string> = { high: 'filter.high', medium: 'filter.medium', low: 'filter.low' }
+
 const priorities = [
-  { value: 'high' as Priority, label: '高' },
-  { value: 'medium' as Priority, label: '中' },
-  { value: 'low' as Priority, label: '低' }
+  { value: 'high' as Priority },
+  { value: 'medium' as Priority },
+  { value: 'low' as Priority }
 ]
 
 const filter = reactive<TodoFilter>({
@@ -187,10 +189,7 @@ const activeFilterCount = computed(() => {
   return count
 })
 
-function priorityLabel(p: Priority): string {
-  const map: Record<Priority, string> = { high: '高', medium: '中', low: '低' }
-  return map[p] || '中'
-}
+
 
 function onInput() {
   if (debounceTimer) clearTimeout(debounceTimer)
@@ -588,4 +587,6 @@ function goBack() { uni.navigateBack() }
   line-height: 1.5;
 }
 </style>
+
+
 

@@ -4,14 +4,14 @@
       <view class="icon-btn" @tap="goBack">
         <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
       </view>
-      <text class="topbar-title">配置 AI</text>
+      <text class="topbar-title">{{ $t('llm.title') }}</text>
     </view>
 
     <scroll-view scroll-y class="llm-content">
       <view style="text-align:center;padding:32rpx 0 40rpx">
         <text class="ai-icon" style="font-size:96rpx">AI</text>
-        <text class="heading">配置你的 AI</text>
-        <text class="sub">选择一个 AI 提供商，输入 API Key 即可使用</text>
+        <text class="heading">{{ $t('llm.heading') }}</text>
+        <text class="sub">{{ $t('llm.sub') }}</text>
       </view>
 
       <!-- Provider Cards -->
@@ -24,7 +24,7 @@
         <text class="provider-name">
           <text :style="{ color: p.color }">●</text>
           {{ p.name }}
-          <text v-if="p.recommended" class="rec-badge">推荐</text>
+          <text v-if="p.recommended" class="rec-badge">{{ $t('llm.recommended') }}</text>
         </text>
         <text class="provider-desc">{{ p.desc }}</text>
         <text v-if="p.price" class="provider-price">{{ p.price }}</text>
@@ -32,18 +32,18 @@
 
       <!-- API Key Input -->
       <view style="margin-top:32rpx">
-        <text style="font-size:24rpx;color:var(--text-3)">API Key</text>
+        <text style="font-size:24rpx;color:var(--text-3)">{{ $t('llm.apiKey') }}</text>
         <input
           class="key-input"
           v-model="apiKey"
           type="text"
           password
-          placeholder="sk-..."
+          :placeholder="$t('llm.keyPlaceholder')"
         />
       </view>
 
       <view class="btn btn-primary" style="width:100%;margin-top:28rpx" @tap="saveConfig">
-        保存配置
+        {{ $t('llm.save') }}
       </view>
     </scroll-view>
   </view>
@@ -51,10 +51,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAgentStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import AppIcon from '@/components/AppIcon.vue'
 
+const { t } = useI18n()
 const { themeVars } = useTheme()
 
 const agentStore = useAgentStore()
@@ -88,7 +90,7 @@ function selectProvider(p: typeof providers[0]) {
 
 async function saveConfig() {
   if (!apiKey.value.trim()) {
-    uni.showToast({ title: '请输入 API Key', icon: 'none' })
+    uni.showToast({ title: t('llm.needKey'), icon: 'none' })
     return
   }
   agentStore.config.provider = selectedProvider.value
@@ -96,7 +98,7 @@ async function saveConfig() {
   agentStore.config.baseUrl = baseUrl.value
   agentStore.config.model = model.value
   await agentStore.saveConfig()
-  uni.showToast({ title: '配置已保存', icon: 'success' })
+  uni.showToast({ title: t('llm.saved'), icon: 'success' })
   setTimeout(() => uni.navigateBack(), 1000)
 }
 
@@ -165,3 +167,4 @@ function goBack() { uni.navigateBack() }
   box-sizing: border-box;
 }
 </style>
+

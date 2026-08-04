@@ -5,7 +5,7 @@
       <view class="icon-btn" @tap="goBack">
         <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
       </view>
-      <text class="topbar-title">任务详情</text>
+      <text class="topbar-title">{{ $t('detail.title') }}</text>
       <view class="topbar-actions">
         <view class="undo-redo">
           <view class="icon-btn" @tap="handleUndo">
@@ -23,16 +23,16 @@
       <!-- Basic Fields -->
       <view class="settings-group">
         <view class="settings-row">
-          <view class="label"><text>标题</text></view>
+          <view class="label"><text>{{ $t('detail.fieldTitle') }}</text></view>
           <input
             class="field-input"
             v-model="form.title"
-            placeholder="输入标题"
+            :placeholder="$t('detail.titlePlaceholder')"
             style="text-align:right"
           />
         </view>
         <view class="settings-row">
-          <view class="label"><text>优先级</text></view>
+          <view class="label"><text>{{ $t('detail.fieldPriority') }}</text></view>
           <view style="display:flex;gap:6rpx">
             <view :class="['pill', form.priority === 'high' ? 'active-h' : '']" @tap="form.priority = 'high'">H</view>
             <view :class="['pill', form.priority === 'medium' ? 'active-m' : '']" @tap="form.priority = 'medium'">M</view>
@@ -42,35 +42,35 @@
         <view class="settings-row">
           <view class="label">
             <AppIcon name="calendar" :size="14" color="var(--text-3)" />
-            <text>截止日期</text>
+            <text>{{ $t('detail.fieldDue') }}</text>
           </view>
           <picker mode="date" :value="form.dueDate || ''" @change="onDateChange">
-            <text class="value">{{ form.dueDate || '选择日期' }}</text>
+            <text class="value">{{ form.dueDate || $t('detail.selectDate') }}</text>
           </picker>
         </view>
         <view class="settings-row">
           <view class="label">
             <AppIcon name="tag" :size="14" color="var(--text-3)" />
-            <text>标签</text>
+            <text>{{ $t('detail.fieldTags') }}</text>
           </view>
           <view style="display:flex;gap:8rpx;flex-wrap:wrap;justify-content:flex-end">
             <text v-for="(tag, i) in form.tags" :key="i" class="todo-tag" @tap="removeTag(i)">{{ tag }} ×</text>
-            <text class="todo-tag" style="background:var(--card-hover);color:var(--text-3)" @tap="showTagInput = !showTagInput">+ 添加</text>
+            <text class="todo-tag" style="background:var(--card-hover);color:var(--text-3)" @tap="showTagInput = !showTagInput">{{ $t('detail.addTag') }}</text>
           </view>
         </view>
         <view v-if="showTagInput" class="settings-row">
-          <input v-model="newTag" placeholder="输入标签回车" style="font-size:26rpx;flex:1" @confirm="addTag" />
+          <input v-model="newTag" :placeholder="$t('detail.tagPlaceholder')" style="font-size:26rpx;flex:1" @confirm="addTag" />
         </view>
       </view>
 
       <!-- Detail -->
       <view class="settings-group">
-        <text class="settings-group-hd">详情</text>
+        <text class="settings-group-hd">{{ $t('detail.detail') }}</text>
         <view style="padding:16rpx 28rpx 28rpx">
           <textarea
             class="detail-textarea"
             v-model="form.detail"
-            placeholder="添加详情..."
+            :placeholder="$t('detail.detailPlaceholder')"
           />
         </view>
       </view>
@@ -80,11 +80,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTodoStore, useUndoStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import AppIcon from '@/components/AppIcon.vue'
 import type { Priority } from '@/types'
 
+const { t } = useI18n()
 const { themeVars } = useTheme()
 
 const todoStore = useTodoStore()
@@ -131,8 +133,8 @@ function removeTag(i: number) { form.tags.splice(i, 1) }
 async function handleDelete() {
   if (!todoId.value) return
   uni.showModal({
-    title: '删除任务',
-    content: '删除后可通过撤销恢复',
+    title: t('detail.deleteTitle'),
+    content: t('detail.deleteContent'),
     confirmColor: '#ef4444',
     success: async (res: any) => {
       if (!res.confirm) return

@@ -5,19 +5,19 @@
       <view class="icon-btn" @tap="goBack">
         <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
       </view>
-      <text class="topbar-title">导出数据</text>
+      <text class="topbar-title">{{ $t('share.title') }}</text>
     </view>
 
     <view class="share-content">
     <!-- Format selector -->
     <view class="section">
-      <text class="section-label">选择导出格式</text>
+      <text class="section-label">{{ $t('share.format') }}</text>
       <view class="format-options">
         <view
           :class="['format-chip', format === 'text' ? 'active' : '']"
           @tap="format = 'text'"
         >
-          <text>纯文本</text>
+          <text>{{ $t('share.text') }}</text>
         </view>
         <view
           :class="['format-chip', format === 'markdown' ? 'active' : '']"
@@ -31,11 +31,11 @@
     <!-- Todo list for selection -->
     <view class="section">
       <text class="section-label">
-        选择待办事项（{{ selectedIds.size }} / {{ todos.length }}）
+        {{ $t('share.selectCount', { n: selectedIds.size, m: todos.length }) }}
       </text>
       <view class="select-actions">
-        <text class="select-link" @tap="selectAll">全选</text>
-        <text class="select-link" @tap="deselectAll">取消全选</text>
+        <text class="select-link" @tap="selectAll">{{ $t('share.selectAll') }}</text>
+        <text class="select-link" @tap="deselectAll">{{ $t('share.deselectAll') }}</text>
       </view>
       <view class="todo-list" v-if="todos.length > 0">
         <view
@@ -48,30 +48,28 @@
             <text v-if="isSelected(todo.id)">✓</text>
           </view>
           <view class="todo-content">
-            <text class="todo-title">{{ todo.title || '(无标题)' }}</text>
+            <text class="todo-title">{{ todo.title || $t('common.noTitle') }}</text>
             <view class="todo-meta">
               <text :class="['todo-priority', `p-${todo.priority}`]">
-                {{ priorityLabel(todo.priority) }}
+                {{ $t(PRIORITY_LABEL_KEYS[todo.priority]) }}
               </text>
               <text v-if="todo.dueDate" class="todo-date">{{ todo.dueDate }}</text>
               <text v-if="todo.tags.length > 0" class="todo-tags">
                 {{ todo.tags.join(', ') }}
               </text>
-              <text :class="['todo-status', todo.completed ? 'done' : 'pending']">
-                {{ todo.completed ? '已完成' : '未完成' }}
-              </text>
+              <text :class="['todo-status', todo.completed ? 'done' : 'pending']">{{ $t(todo.completed ? 'search.done' : 'search.pending') }}</text>
             </view>
           </view>
         </view>
       </view>
       <view class="empty-hint" v-else>
-        <text class="hint-text">暂无待办事项</text>
+        <text class="hint-text">{{ $t('share.empty') }}</text>
       </view>
     </view>
 
     <!-- Preview -->
     <view class="section" v-if="previewText">
-      <text class="section-label">预览</text>
+      <text class="section-label">{{ $t('share.preview') }}</text>
       <view class="preview-card">
         <text class="preview-content">{{ previewText }}</text>
       </view>
@@ -81,7 +79,7 @@
     <view class="actions" v-if="selectedIds.size > 0">
       <view class="btn-copy" @tap="handleCopy">
         <AppIcon name="clipboard-copy" :size="16" color="#fff" />
-        <text class="btn-text">复制到剪贴板</text>
+        <text class="btn-text">{{ $t('share.copy') }}</text>
       </view>
     </view>
     </view>
@@ -90,11 +88,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTodoStore } from '@/stores'
 import { exportAsText, exportAsMarkdown } from '@/services/export'
 import { useTheme } from '@/composables/useTheme'
 import AppIcon from '@/components/AppIcon.vue'
-import type { Priority } from '@/types'
+
+const { t } = useI18n()
+
+const PRIORITY_LABEL_KEYS: Record<string, string> = { high: 'filter.high', medium: 'filter.medium', low: 'filter.low' }
 
 const { themeVars } = useTheme()
 
@@ -110,10 +112,7 @@ onMounted(async () => {
   await todoStore.loadTodos()
 })
 
-function priorityLabel(p: Priority): string {
-  const map: Record<Priority, string> = { high: '高', medium: '中', low: '低' }
-  return map[p] || '中'
-}
+
 
 function isSelected(id: string): boolean {
   return selectedIds.value.has(id)
@@ -152,10 +151,10 @@ function handleCopy() {
   uni.setClipboardData({
     data: previewText.value,
     success() {
-      uni.showToast({ title: '已复制到剪贴板', icon: 'success' })
+      uni.showToast({ title: t('share.copied'), icon: 'success' })
     },
     fail() {
-      uni.showToast({ title: '复制失败', icon: 'error' })
+      uni.showToast({ title: t('share.copyFail'), icon: 'error' })
     }
   })
 }
@@ -367,3 +366,5 @@ function goBack() { uni.navigateBack() }
   font-weight: 600;
 }
 </style>
+
+

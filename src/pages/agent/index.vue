@@ -6,7 +6,7 @@
       </view>
       <text class="topbar-title" style="display:flex;align-items:center;gap:12rpx">
         <text class="ai-icon" style="font-size:32rpx">AI</text>
-        <text>Agent</text>
+        <text>{{ $t('nav.agent') }}</text>
       </text>
     </view>
 
@@ -15,23 +15,23 @@
       <view class="agent-mode-switch">
         <view :class="['mode-tab', mode === 'decompose' ? 'active' : '']" @tap="mode = 'decompose'">
           <AppIcon name="file-text" :size="15" />
-          <text>文本→任务</text>
+          <text>{{ $t('agent.decomposeTab') }}</text>
         </view>
         <view :class="['mode-tab', mode === 'summarize' ? 'active' : '']" @tap="mode = 'summarize'">
           <AppIcon name="chart-column" :size="15" />
-          <text>任务→文本</text>
+          <text>{{ $t('agent.summarizeTab') }}</text>
         </view>
       </view>
 
       <!-- Decompose Panel -->
       <view v-if="mode === 'decompose'" class="agent-panel">
-        <text class="panel-title">文本 → 任务拆解</text>
-        <text class="panel-desc">粘贴聊天记录、会议纪要，AI 自动拆解为待办</text>
+        <text class="panel-title">{{ $t('agent.decompose.title') }}</text>
+        <text class="panel-desc">{{ $t('agent.decompose.desc') }}</text>
 
         <view class="agent-scope">
           <view class="scope-hd">
             <AppIcon name="book-open" :size="13" color="var(--text-3)" />
-            <text>读取来源</text>
+            <text>{{ $t('agent.scope.read') }}</text>
           </view>
           <picker :range="listNames" @change="onReadListChange">
             <view class="scope-select">{{ readListName }}</view>
@@ -41,19 +41,19 @@
         <textarea
           class="agent-textarea"
           v-model="decomposeText"
-          placeholder="例如：领导说下周三前要交Q2报告..."
+          :placeholder="$t('agent.decompose.placeholder')"
         />
 
         <view class="agent-actions">
           <view class="btn btn-primary" @tap="doDecompose">
             <text class="ai-icon" style="font-size:24rpx">AI</text>
-            <text>开始拆解</text>
+            <text>{{ $t('agent.decompose.btn') }}</text>
           </view>
         </view>
 
         <!-- Decompose Result -->
         <view v-if="decomposeResults.length > 0" class="agent-result">
-          <text class="result-hd">拆解结果（{{ decomposeResults.length }} 项任务）</text>
+          <text class="result-hd">{{ $t('agent.decompose.result', { n: decomposeResults.length }) }}</text>
           <view v-for="(item, i) in decomposeResults" :key="i" class="result-item">
             <checkbox :checked="item.selected" @tap="item.selected = !item.selected" />
             <text style="flex:1">{{ item.title }}</text>
@@ -62,11 +62,11 @@
           <view class="agent-actions" style="margin-top:20rpx">
             <view class="btn btn-primary" @tap="saveDecomposed">
               <AppIcon name="check" :size="14" color="#fff" />
-              <text>保存到任务列表</text>
+              <text>{{ $t('agent.decompose.save') }}</text>
             </view>
             <view class="btn btn-ghost" @tap="editDecomposed">
               <AppIcon name="pencil" :size="14" color="var(--primary)" />
-              <text>编辑后保存</text>
+              <text>{{ $t('agent.decompose.edit') }}</text>
             </view>
           </view>
         </view>
@@ -74,13 +74,13 @@
 
       <!-- Summarize Panel -->
       <view v-if="mode === 'summarize'" class="agent-panel">
-        <text class="panel-title">任务 → 文本总结</text>
-        <text class="panel-desc">将待办整理成连贯的文本</text>
+        <text class="panel-title">{{ $t('agent.summarize.title') }}</text>
+        <text class="panel-desc">{{ $t('agent.summarize.desc') }}</text>
 
         <view class="agent-scope">
           <view class="scope-hd">
             <AppIcon name="book-open" :size="13" color="var(--text-3)" />
-            <text>读取来源</text>
+            <text>{{ $t('agent.scope.read') }}</text>
           </view>
           <picker :range="listNames" @change="onSumListChange">
             <view class="scope-select">{{ sumListName }}</view>
@@ -90,13 +90,13 @@
         <textarea
           class="agent-textarea"
           v-model="summarizeContext"
-          placeholder="附加说明（可选）"
+          :placeholder="$t('agent.summarize.placeholder')"
         />
 
         <view class="agent-actions">
           <view class="btn btn-primary" @tap="doSummarize">
             <text class="ai-icon" style="font-size:24rpx">AI</text>
-            <text>生成总结</text>
+            <text>{{ $t('agent.summarize.btn') }}</text>
           </view>
         </view>
 
@@ -106,11 +106,11 @@
         <view v-if="summaryText" class="agent-actions">
           <view class="btn btn-primary" @tap="copySummary">
             <AppIcon name="clipboard-copy" :size="14" color="#fff" />
-            <text>复制</text>
+            <text>{{ $t('agent.summarize.copy') }}</text>
           </view>
           <view class="btn btn-outline" @tap="editSummary">
             <AppIcon name="pencil" :size="14" color="var(--text-2)" />
-            <text>编辑</text>
+            <text>{{ $t('agent.summarize.edit') }}</text>
           </view>
         </view>
       </view>
@@ -120,11 +120,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTodoStore, useListStore, useAgentStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import AppIcon from '@/components/AppIcon.vue'
 import type { CreateTodoInput, Priority } from '@/types'
 
+const { t } = useI18n()
 const { themeVars } = useTheme()
 
 const todoStore = useTodoStore()
@@ -160,7 +162,7 @@ function onSumListChange(e: any) {
 
 async function doDecompose() {
   if (!agentStore.configured) {
-    uni.showToast({ title: '请先配置 API Key', icon: 'none' })
+    uni.showToast({ title: t('agent.needApiKey'), icon: 'none' })
     return
   }
   if (!decomposeText.value.trim()) return
@@ -173,7 +175,7 @@ async function doDecompose() {
       selected: true
     }))
   } catch (e: any) {
-    uni.showToast({ title: e.message || '拆解失败', icon: 'none' })
+    uni.showToast({ title: e.message || t('agent.decompose.fail'), icon: 'none' })
   }
   loading.value = false
 }
@@ -187,19 +189,19 @@ async function saveDecomposed() {
       listId: readListId.value
     })
   }
-  uni.showToast({ title: `已保存 ${selected.length} 项任务`, icon: 'success' })
+  uni.showToast({ title: t('agent.decompose.saved', { n: selected.length }), icon: 'success' })
   decomposeResults.value = []
   decomposeText.value = ''
 }
 
 function editDecomposed() {
   // Allow editing in-place (already editable via checkboxes)
-  uni.showToast({ title: '请直接编辑后保存', icon: 'none' })
+  uni.showToast({ title: t('agent.editHint'), icon: 'none' })
 }
 
 async function doSummarize() {
   if (!agentStore.configured) {
-    uni.showToast({ title: '请先配置 API Key', icon: 'none' })
+    uni.showToast({ title: t('agent.needApiKey'), icon: 'none' })
     return
   }
   loading.value = true
@@ -207,7 +209,7 @@ async function doSummarize() {
     const todos = todoStore.todosByList(sumListId.value).filter(t => !t.deleted)
     summaryText.value = await agentStore.summarizeTodos(todos, summarizeContext.value || undefined)
   } catch (e: any) {
-    uni.showToast({ title: e.message || '总结失败', icon: 'none' })
+    uni.showToast({ title: e.message || t('agent.summarize.fail'), icon: 'none' })
   }
   loading.value = false
 }
@@ -216,7 +218,7 @@ function copySummary() {
   uni.setClipboardData({ data: summaryText.value })
 }
 function editSummary() {
-  uni.showToast({ title: '请直接编辑文本', icon: 'none' })
+  uni.showToast({ title: t('agent.editHint'), icon: 'none' })
 }
 
 function goBack() { uni.navigateBack() }
@@ -269,4 +271,6 @@ function goBack() { uni.navigateBack() }
   margin-bottom: 16rpx;
 }
 </style>
+
+
 

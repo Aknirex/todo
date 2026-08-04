@@ -16,7 +16,7 @@
         <view class="tree-group">
           <view class="tree-header" @tap="treeOpen = !treeOpen">
             <AppIcon name="chevron-down" :size="14" color="var(--text-3)" class="tree-chevron" :style="{ transform: treeOpen ? 'rotate(0)' : 'rotate(-90deg)' }" />
-            <text>任务列表</text>
+            <text>{{ $t('sidebar.tasks') }}</text>
           </view>
           <view v-show="treeOpen" class="tree-children">
             <view
@@ -31,25 +31,25 @@
             </view>
             <view class="tree-item new-list" @tap="createNewList">
               <AppIcon name="plus" :size="15" color="var(--text-3)" />
-              <text class="tree-name">新建列表</text>
+              <text class="tree-name">{{ $t('nav.newList') }}</text>
             </view>
           </view>
         </view>
 
         <view :class="['nav-item', currentPage === 'agent' ? 'active' : '']" @tap="goAgent">
           <text class="ai-icon" style="font-size:28rpx;width:36rpx;text-align:center">AI</text>
-          <text>Agent</text>
+          <text>{{ $t('nav.agent') }}</text>
         </view>
         <view class="nav-item" @tap="openSearch">
           <AppIcon name="search" :size="18" />
-          <text>搜索</text>
+          <text>{{ $t('nav.search') }}</text>
         </view>
 
         <view class="sidebar-spacer"></view>
 
         <view :class="['nav-item', currentPage === 'settings' ? 'active' : '']" @tap="goSettings">
           <AppIcon name="settings" :size="18" />
-          <text>设置</text>
+          <text>{{ $t('nav.settings') }}</text>
         </view>
       </scroll-view>
     </view>
@@ -75,37 +75,43 @@
       <!-- Toolbar -->
       <view class="toolbar">
         <view class="dropdown-wrap">
-          <view class="dropdown-trigger" @tap="showFilterPanel = !showFilterPanel" title="筛选">
+          <view class="dropdown-trigger" @tap="toggleFilterPanel" :title="$t('toolbar.filter')">
             <AppIcon name="filter" :size="14" color="var(--text-2)" />
             <text v-if="activeFilterCount > 0" class="count">{{ activeFilterCount }}</text>
           </view>
           <view v-if="showFilterPanel" class="dropdown-panel">
-            <view class="dropdown-hd">优先级</view>
+            <view class="dropdown-hd">{{ $t('filter.title') }}</view>
             <view :class="['dropdown-item', filters.has('high') ? 'active' : '']" @tap="toggleFilter('high')">
-              <text style="color:var(--danger)">●</text><text>高</text>
+              <text style="color:var(--danger)">●</text><text>{{ $t('filter.high') }}</text>
             </view>
             <view :class="['dropdown-item', filters.has('medium') ? 'active' : '']" @tap="toggleFilter('medium')">
-              <text style="color:var(--warning)">●</text><text>中</text>
+              <text style="color:var(--warning)">●</text><text>{{ $t('filter.medium') }}</text>
             </view>
             <view :class="['dropdown-item', filters.has('low') ? 'active' : '']" @tap="toggleFilter('low')">
-              <text style="color:var(--success)">●</text><text>低</text>
+              <text style="color:var(--success)">●</text><text>{{ $t('filter.low') }}</text>
             </view>
-            <view class="dropdown-hd">状态</view>
+            <view class="dropdown-hd">{{ $t('filter.status') }}</view>
             <view :class="['dropdown-item', filters.has('active') ? 'active' : '']" @tap="toggleFilter('active')">
-              <text>进行中</text>
+              <text>{{ $t('filter.active') }}</text>
             </view>
             <view :class="['dropdown-item', filters.has('done') ? 'active' : '']" @tap="toggleFilter('done')">
-              <text>已完成</text>
+              <text>{{ $t('filter.done') }}</text>
             </view>
-            <view class="dropdown-ft" @tap="clearFilters"><text class="btn-ghost" style="font-size:24rpx">清除</text></view>
+            <view class="dropdown-ft" @tap="clearFilters"><text class="btn-ghost" style="font-size:24rpx">{{ $t('common.clear') }}</text></view>
           </view>
         </view>
         <view class="dropdown-wrap">
-          <view class="dropdown-trigger" @tap="showSortPanel = !showSortPanel" title="排序">
+          <view class="dropdown-trigger" @tap="toggleSortPanel" :title="$t('toolbar.sort')">
             <AppIcon name="arrow-up-down" :size="14" color="var(--text-2)" />
           </view>
           <view v-if="showSortPanel" class="dropdown-panel">
-            <view class="dropdown-hd">排序</view>
+            <view class="dropdown-hd sort-hd" @tap="toggleSortDir">
+              <text>{{ $t('sort.title') }}</text>
+              <view class="sort-dir">
+                <AppIcon name="arrow-up-down" :size="12" color="var(--text-3)" />
+                <text>{{ $t(sortDir === 'asc' ? 'sort.asc' : 'sort.desc') }}</text>
+              </view>
+            </view>
             <view
               v-for="opt in ['created', 'priority', 'dueDate', 'alpha']"
               :key="opt"
@@ -113,14 +119,7 @@
               @tap="setSortBy(opt)"
             >
               <AppIcon name="check" :size="14" :color="sortBy === opt ? 'var(--primary)' : 'transparent'" />
-              <text>{{ SORT_LABELS[opt] }}</text>
-            </view>
-            <view class="dropdown-ft" style="justify-content:space-between;align-items:center">
-              <text style="font-size:22rpx;color:var(--text-3)">{{ sortLabel() }}</text>
-              <view class="btn-ghost" style="font-size:24rpx;padding:8rpx 16rpx" @tap="toggleSortDir">
-                <AppIcon name="arrow-up-down" :size="12" color="var(--primary)" />
-                <text>切换方向</text>
-              </view>
+              <text>{{ $t(SORT_LABEL_KEYS[opt]) }}</text>
             </view>
           </view>
         </view>
@@ -133,11 +132,14 @@
         </view>
       </view>
 
+      <!-- Panel Backdrop -->
+      <view v-if="showFilterPanel || showSortPanel" class="panel-backdrop" @tap="closePanels"></view>
+
       <!-- Todo List -->
       <scroll-view scroll-y class="content">
         <view v-if="filteredActiveTodos.length > 0">
           <view class="section-hd">
-            <text class="section-label">进行中</text>
+            <text class="section-label">{{ $t('section.active') }}</text>
             <text class="section-count">{{ filteredActiveTodos.length }}</text>
           </view>
           <view
@@ -150,7 +152,7 @@
               <text v-if="todo.completed" style="color:#fff;font-size:20rpx">✓</text>
             </view>
             <view class="todo-body">
-              <text class="todo-title">{{ todo.title || '(无标题)' }}</text>
+              <text class="todo-title">{{ displayTitle(todo) }}</text>
               <view class="todo-meta">
                 <text v-for="tag in todo.tags" :key="tag" class="todo-tag">{{ tag }}</text>
                 <view v-if="todo.dueDate" :class="['todo-due', isOverdue(todo.dueDate) ? 'overdue' : '']">
@@ -164,7 +166,7 @@
 
         <view v-if="filteredDoneTodos.length > 0">
           <view class="section-hd" style="margin-top:32rpx">
-            <text class="section-label">已完成</text>
+            <text class="section-label">{{ $t('section.done') }}</text>
             <text class="section-count">{{ filteredDoneTodos.length }}</text>
           </view>
           <view
@@ -177,15 +179,15 @@
               <text style="color:#fff;font-size:20rpx">✓</text>
             </view>
             <view class="todo-body">
-              <text class="todo-title">{{ todo.title || '(无标题)' }}</text>
+              <text class="todo-title">{{ displayTitle(todo) }}</text>
             </view>
           </view>
         </view>
 
         <view v-if="filteredActiveTodos.length === 0 && filteredDoneTodos.length === 0" class="empty">
           <AppIcon name="inbox" :size="48" color="var(--text-3)" />
-          <text style="margin-top:16rpx">暂无待办事项</text>
-          <text style="font-size:22rpx;margin-top:8rpx">点击右下角 + 添加第一个待办</text>
+          <text style="margin-top:16rpx">{{ $t('empty.title') }}</text>
+          <text style="font-size:22rpx;margin-top:8rpx">{{ $t('empty.sub') }}</text>
         </view>
       </scroll-view>
 
@@ -199,7 +201,7 @@
     <view :class="['new-task-overlay', newTaskOpen ? 'open' : '']">
       <view class="new-task-top">
         <view class="topbar" style="border:none;padding:0;height:auto;margin-bottom:24rpx">
-          <text class="topbar-title">新建任务</text>
+          <text class="topbar-title">{{ $t('newTask.title') }}</text>
           <view class="topbar-actions">
             <view class="icon-btn" @tap="closeNewTask">
               <AppIcon name="x" :size="18" color="var(--text-2)" />
@@ -214,13 +216,13 @@
           </view>
           <view :class="['meta-btn', newTaskTags.length > 0 ? 'active' : '']" @tap="showTagInput = !showTagInput">
             <AppIcon name="tag" :size="12" color="var(--text-3)" />
-            <text>标签</text>
+            <text>{{ $t('newTask.tags') }}</text>
           </view>
           <view :class="['meta-btn', newDueDate ? 'active' : '']">
             <picker mode="date" :value="newDueDate || ''" @change="onNewDueChange">
               <view style="display:flex;align-items:center;gap:8rpx">
                 <AppIcon name="calendar" :size="12" color="var(--text-3)" />
-                <text>截止日期</text>
+                <text>{{ $t('newTask.due') }}</text>
               </view>
             </picker>
           </view>
@@ -231,7 +233,7 @@
           </text>
           <input
             v-model="newTagInput"
-            placeholder="输入标签回车"
+            :placeholder="$t('newTask.placeholderTag')"
             style="font-size:24rpx;flex:1;min-width:120rpx"
             @confirm="addNewTag"
           />
@@ -240,7 +242,7 @@
           <input
             v-model="newTitle"
             type="text"
-            placeholder="任务标题..."
+            :placeholder="$t('newTask.placeholderTitle')"
             @confirm="focusDetail"
           />
         </view>
@@ -249,13 +251,13 @@
         <textarea
           ref="newDetailRef"
           v-model="newDetail"
-          placeholder="添加详情（可选）..."
+          :placeholder="$t('newTask.placeholderDetail')"
         />
         <view style="display:flex;justify-content:flex-end;gap:16rpx;margin-top:24rpx">
-          <view class="btn btn-outline" @tap="closeNewTask">取消</view>
+          <view class="btn btn-outline" @tap="closeNewTask">{{ $t('common.cancel') }}</view>
           <view class="btn btn-primary" @tap="createFromOverlay">
             <AppIcon name="check" :size="14" color="#fff" />
-            <text>创建</text>
+            <text>{{ $t('newTask.create') }}</text>
           </view>
         </view>
       </view>
@@ -269,22 +271,22 @@
           <view class="icon-btn" @tap="closeSearch">
             <AppIcon name="arrow-left" :size="18" color="var(--text-2)" />
           </view>
-          <text class="topbar-title">搜索</text>
+          <text class="topbar-title">{{ $t('search.title') }}</text>
         </view>
         <view class="input-bar">
           <AppIcon name="search" :size="18" color="var(--text-3)" />
           <input
             v-model="searchKeyword"
             type="text"
-            placeholder="搜索任务..."
+            :placeholder="$t('search.placeholder')"
             @confirm="doSearch"
           />
         </view>
         <scroll-view scroll-y class="search-content">
           <view v-if="!searchDone" class="search-history">
             <view class="search-history-hd">
-              <text>最近搜索</text>
-              <text style="color:var(--primary);font-size:22rpx" @tap="searchHistory = []">清除</text>
+              <text>{{ $t('search.recent') }}</text>
+              <text style="color:var(--primary);font-size:22rpx" @tap="searchHistory = []">{{ $t('search.clearHistory') }}</text>
             </view>
             <view
               v-for="q in searchHistory"
@@ -298,7 +300,7 @@
           </view>
           <view v-else>
             <view v-if="searchResults.length === 0" class="empty">
-              <text>无搜索结果</text>
+              <text>{{ $t('search.noResults') }}</text>
             </view>
             <view v-else>
               <view
@@ -308,7 +310,7 @@
                 @tap="goDetail(todo.id); closeSearch()"
               >
                 <view class="todo-body">
-                  <text class="todo-title">{{ todo.title }}</text>
+                  <text class="todo-title">{{ todo.title || $t('common.noTitle') }}</text>
                   <view class="todo-meta">
                     <text v-for="tag in todo.tags" :key="tag" class="todo-tag">{{ tag }}</text>
                   </view>
@@ -325,12 +327,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { useI18n } from 'vue-i18n'
 import { useTodoStore, useListStore, useUndoStore } from '@/stores'
 import { searchTodos } from '@/services/search'
 import { useTheme } from '@/composables/useTheme'
 import AppIcon from '@/components/AppIcon.vue'
 import type { Todo, Priority } from '@/types'
 
+const { t } = useI18n()
 const { themeVars } = useTheme()
 
 const todoStore = useTodoStore()
@@ -386,15 +390,15 @@ const sortedLists = computed(() => {
 
 const activeListName = computed(() => {
   const list = listStore.lists.find(l => l.id === activeListId.value)
-  return list?.name || '默认列表'
+  return list?.name || t('sidebar.defaultList')
 })
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
-const SORT_LABELS: Record<string, string> = {
-  created: '创建时间',
-  priority: '优先级',
-  dueDate: '截止日期',
-  alpha: '名称 A→Z'
+const SORT_LABEL_KEYS: Record<string, string> = {
+  created: 'sort.created',
+  priority: 'sort.priority',
+  dueDate: 'sort.dueDate',
+  alpha: 'sort.alpha'
 }
 
 function applySort(list: Todo[]): Todo[] {
@@ -454,12 +458,12 @@ function closeSidebar() { sidebarOpen.value = false }
 
 async function createNewList() {
   uni.showModal({
-    title: '新建列表',
+    title: t('nav.newList'),
     editable: true,
-    placeholderText: '列表名称',
+    placeholderText: t('nav.newListPlaceholder'),
     success: async (res: any) => {
       if (!res.confirm) return
-      const name = (res.content || '').trim() || '新列表'
+      const name = (res.content || '').trim() || t('nav.newListDefault')
       const list = await listStore.createList(name)
       activeListId.value = list.id
       closeSidebar()
@@ -471,15 +475,24 @@ function toggleFilter(f: string) {
   filters.value.has(f) ? filters.value.delete(f) : filters.value.add(f)
 }
 function clearFilters() { filters.value.clear() }
+function toggleFilterPanel() {
+  showFilterPanel.value = !showFilterPanel.value
+  if (showFilterPanel.value) showSortPanel.value = false
+}
+function toggleSortPanel() {
+  showSortPanel.value = !showSortPanel.value
+  if (showSortPanel.value) showFilterPanel.value = false
+}
+function closePanels() {
+  showFilterPanel.value = false
+  showSortPanel.value = false
+}
 function setSortBy(s: string) {
   sortBy.value = s
   showSortPanel.value = false
 }
 function toggleSortDir() {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-}
-function sortLabel(): string {
-  return (SORT_LABELS[sortBy.value] || '创建时间') + (sortDir.value === 'asc' ? ' ↑' : ' ↓')
 }
 
 // New Task
@@ -554,14 +567,21 @@ function goSettings() { closeSidebar(); uni.navigateTo({ url: '/pages/settings/i
 function isOverdue(date: string): boolean {
   return new Date(date) < new Date(new Date().toDateString())
 }
+function displayTitle(todo: Todo): string {
+  const title = (todo.title || '').trim()
+  if (title) return title
+  const detail = (todo.detail || '').replace(/\s+/g, ' ').trim()
+  if (detail) return detail.length > 30 ? detail.slice(0, 30) + '…' : detail
+  return t('common.noTitle')
+}
 function formatDue(date: string): string {
   const d = new Date(date)
   const today = new Date(new Date().toDateString())
   const diff = Math.floor((d.getTime() - today.getTime()) / 86400000)
-  if (diff === 0) return '今天'
-  if (diff === 1) return '明天'
-  if (diff === -1) return '逾期 1 天'
-  if (diff < -1) return `逾期 ${-diff} 天`
+  if (diff === 0) return t('due.today')
+  if (diff === 1) return t('due.tomorrow')
+  if (diff === -1) return t('due.overdueDays', { n: 1 })
+  if (diff < -1) return t('due.overdueDays', { n: -diff })
   return date
 }
 </script>
@@ -719,6 +739,14 @@ function formatDue(date: string): string {
   padding: 24rpx 32rpx 80rpx;
 }
 
+/* Panel Backdrop */
+.panel-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 90;
+  background: transparent;
+}
+
 /* Dropdown Panel */
 .dropdown-wrap { position: relative; }
 .dropdown-trigger {
@@ -753,6 +781,20 @@ function formatDue(date: string): string {
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 1rpx;
+}
+.sort-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12rpx;
+}
+.sort-dir {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-2);
 }
 .dropdown-item {
   display: flex;
