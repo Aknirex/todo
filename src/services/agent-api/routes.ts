@@ -1,9 +1,9 @@
 import { successResponse, errorResponse, registerRoute, type AgentApiServer } from './server'
 import { todoRepository, listRepository } from '@/dal'
+import { useTodoStore, useUndoStore } from '@/stores'
 
 export function registerAllRoutes(server: AgentApiServer): void {
   registerRoute(server, 'POST', '/api/v1/todos', async ({ body }: { body?: any }) => {
-    const { useTodoStore } = await import('@/stores')
     const store = useTodoStore()
     const todo = await store.createTodo(body)
     return successResponse(todo)
@@ -29,7 +29,6 @@ export function registerAllRoutes(server: AgentApiServer): void {
   })
 
   registerRoute(server, 'PATCH', '/api/v1/todos/:id', async ({ pathParams, body }: { pathParams?: any; body?: any }) => {
-    const { useTodoStore } = await import('@/stores')
     const store = useTodoStore()
     await store.updateTodo(pathParams.id, body)
     const todo = await todoRepository.findById(pathParams.id)
@@ -37,14 +36,12 @@ export function registerAllRoutes(server: AgentApiServer): void {
   })
 
   registerRoute(server, 'DELETE', '/api/v1/todos/:id', async ({ pathParams }: { pathParams?: any }) => {
-    const { useTodoStore } = await import('@/stores')
     const store = useTodoStore()
     await store.deleteTodo(pathParams.id)
     return successResponse({ deleted: true })
   })
 
   registerRoute(server, 'POST', '/api/v1/todos/:id/toggle', async ({ pathParams }: { pathParams?: any }) => {
-    const { useTodoStore } = await import('@/stores')
     const store = useTodoStore()
     await store.toggleComplete(pathParams.id)
     const todo = await todoRepository.findById(pathParams.id)
@@ -52,7 +49,6 @@ export function registerAllRoutes(server: AgentApiServer): void {
   })
 
   registerRoute(server, 'POST', '/api/v1/todos/batch', async ({ body }: { body?: any }) => {
-    const { useTodoStore } = await import('@/stores')
     const store = useTodoStore()
     const listId = body?.listId || 'default'
     const results = []
@@ -83,7 +79,6 @@ export function registerAllRoutes(server: AgentApiServer): void {
   })
 
   registerRoute(server, 'POST', '/api/v1/undo', async () => {
-    const { useUndoStore, useTodoStore } = await import('@/stores')
     const undoStore = useUndoStore()
     const rec = await undoStore.undo()
     if (!rec) return errorResponse(2002, 'Nothing to undo')

@@ -1,7 +1,8 @@
+import { openDatabase } from './sqlite-adapter'
+
 let db: any = null
 
 export async function initDatabase(): Promise<void> {
-  const { openDatabase } = await import('./sqlite-adapter')
   db = await openDatabase('aknirex_todo', 1)
   await runMigrations(db)
 }
