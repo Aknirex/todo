@@ -9,6 +9,7 @@
 | [同步方案设计](sync-design.md) | 2026-08-02 | v1.2 | ✅ 已确认（v1.1 实现） |
 | [产品需求文档](PRD-aknirex-todo.md) | 2026-08-02 | v1.0 | ✅ 初稿 |
 | [技术方案](technical-design.md) | 2026-08-02 | v1.0 | ✅ 初稿 |
+| [Flutter 移动端发布验收记录](flutter-mobile-release-acceptance.md) | 2026-08-23 | v0.1 | ✅ 已记录 |
 
 ## 待创建
 
