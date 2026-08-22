@@ -10,7 +10,7 @@
 |------|------|
 | `flutter pub get` | 通过 |
 | `dart format --output=none --set-exit-if-changed lib test` | 通过 |
-| `flutter analyze` | 通过；仅有 6 个 Flutter SDK `Radio` 弃用提示 |
+| `flutter analyze` | Exit 0 not claimed；6 个预先存在的 info-level Flutter SDK `Radio` 弃用诊断仍存在；无 errors/warnings |
 | `flutter test` | 通过；46 tests |
 | Android debug/profile/release | 未完成，Android toolchain 不满足要求 |
 | iOS build/simulator/device | 未完成，当前环境为 Windows |
