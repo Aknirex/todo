@@ -69,7 +69,7 @@ class WorkspacePage extends ConsumerWidget {
                         builder: (_) => const SettingsPage(),
                       ),
                     ),
-              ),
+                  ),
             ),
             const SizedBox(width: AppSpacing.small),
           ],
@@ -260,79 +260,79 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (final list in workspace.current.lists) ...[
-                    Text(
-                      list.name,
-                      style: Theme.of(context).textTheme.displaySmall,
-                    ),
-                    const SizedBox(height: AppSpacing.medium),
-                    TextField(
-                      key: const ValueKey('todo-search-input'),
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        labelText: l10n.searchTodos,
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon:
-                            _searchController.text.isEmpty
-                                ? null
-                                : IconButton(
-                                  tooltip:
-                                      MaterialLocalizations.of(
-                                        context,
-                                      ).deleteButtonTooltip,
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _onSearchChanged('');
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.clear),
-                                ),
+                      Text(
+                        list.name,
+                        style: Theme.of(context).textTheme.displaySmall,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    _QueryControls(
-                      query: _query,
-                      availableTags: allTodos
-                          .expand((todo) => todo.tags)
-                          .toSet()
-                          .toList(growable: false),
-                      onPrioritySelected: _togglePriority,
-                      onTagSelected: _toggleTag,
-                      onCompletedSelected:
-                          (completed) => _setQuery(
-                            completed == null
-                                ? _query.copyWith(clearCompleted: true)
-                                : _query.copyWith(completed: completed),
-                          ),
-                      onDueDateSelected: _toggleDueDate,
-                      onSortSelected:
-                          (sort) => _setQuery(_query.copyWith(sort: sort)),
-                    ),
-                    const SizedBox(height: AppSpacing.section),
-                    if (result.matches.isEmpty &&
-                        hasQuery &&
-                        allTodos.isNotEmpty)
-                      _EmptyQueryState(onClear: _clearQuery)
-                    else ...[
-                      _TodoSection(
-                        title: l10n.activeTodos,
-                        matches: active
-                            .where((match) => match.todo.listId == list.id)
+                      const SizedBox(height: AppSpacing.medium),
+                      TextField(
+                        key: const ValueKey('todo-search-input'),
+                        controller: _searchController,
+                        onChanged: _onSearchChanged,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          labelText: l10n.searchTodos,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon:
+                              _searchController.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                    tooltip:
+                                        MaterialLocalizations.of(
+                                          context,
+                                        ).deleteButtonTooltip,
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _onSearchChanged('');
+                                      setState(() {});
+                                    },
+                                    icon: const Icon(Icons.clear),
+                                  ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.small),
+                      _QueryControls(
+                        query: _query,
+                        availableTags: allTodos
+                            .expand((todo) => todo.tags)
+                            .toSet()
                             .toList(growable: false),
-                        workspace: workspace,
+                        onPrioritySelected: _togglePriority,
+                        onTagSelected: _toggleTag,
+                        onCompletedSelected:
+                            (completed) => _setQuery(
+                              completed == null
+                                  ? _query.copyWith(clearCompleted: true)
+                                  : _query.copyWith(completed: completed),
+                            ),
+                        onDueDateSelected: _toggleDueDate,
+                        onSortSelected:
+                            (sort) => _setQuery(_query.copyWith(sort: sort)),
                       ),
+                      const SizedBox(height: AppSpacing.section),
+                      if (result.matches.isEmpty &&
+                          hasQuery &&
+                          allTodos.isNotEmpty)
+                        _EmptyQueryState(onClear: _clearQuery)
+                      else ...[
+                        _TodoSection(
+                          title: l10n.activeTodos,
+                          matches: active
+                              .where((match) => match.todo.listId == list.id)
+                              .toList(growable: false),
+                          workspace: workspace,
+                        ),
+                        const SizedBox(height: AppSpacing.large),
+                        _TodoSection(
+                          title: l10n.completedTodos,
+                          matches: completed
+                              .where((match) => match.todo.listId == list.id)
+                              .toList(growable: false),
+                          workspace: workspace,
+                        ),
+                        const SizedBox(height: AppSpacing.large),
+                      ],
                       const SizedBox(height: AppSpacing.large),
-                      _TodoSection(
-                        title: l10n.completedTodos,
-                        matches: completed
-                            .where((match) => match.todo.listId == list.id)
-                            .toList(growable: false),
-                        workspace: workspace,
-                      ),
-                      const SizedBox(height: AppSpacing.large),
-                    ],
-                    const SizedBox(height: AppSpacing.large),
                     ],
                   ],
                 ),
