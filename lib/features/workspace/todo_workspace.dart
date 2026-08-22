@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/storage/app_database.dart';
 import 'todo.dart';
+import 'todo_query.dart';
 
 class WorkspaceSnapshot {
   const WorkspaceSnapshot({required this.lists, required this.todos});
@@ -246,6 +247,13 @@ class TodoWorkspace extends ChangeNotifier {
     _snapshot = await store.load();
     _history = await store.loadHistory();
     if (notify) notifyListeners();
+  }
+
+  TodoQueryResult queryTodos({
+    TodoQuery query = const TodoQuery(),
+    DateTime? now,
+  }) {
+    return TodoQueryEngine.apply(current.todos, query, now: now);
   }
 
   WorkspaceSnapshot get current =>

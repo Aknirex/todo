@@ -30,6 +30,31 @@ class AppLocalizations {
   String get activeTodos => isEnglish ? 'Active' : '未完成';
   String get completedTodos => isEnglish ? 'Completed' : '已完成';
   String get noTodos => isEnglish ? 'No Todos yet.' : '还没有 Todo。';
+  String get noMatchingTodos =>
+      isEnglish ? 'No Todos match these conditions.' : '没有符合条件的 Todo。';
+  String get clearSearchAndFilters =>
+      isEnglish ? 'Clear search and filters' : '清除搜索和筛选';
+  String get searchTodos =>
+      isEnglish ? 'Search title, detail, or tags' : '搜索标题、详情或 Tag';
+  String get filterPriority => isEnglish ? 'Priority' : 'Priority';
+  String get filterTags => isEnglish ? 'Tags' : 'Tag';
+  String get filterStatus => isEnglish ? 'Status' : '状态';
+  String get filterDueDate => isEnglish ? 'DueDate' : 'DueDate';
+  String get allFilter => isEnglish ? 'All' : '全部';
+  String get activeFilter => isEnglish ? 'Active' : '未完成';
+  String get completedFilter => isEnglish ? 'Completed' : '已完成';
+  String get todayDueDate => isEnglish ? 'Today' : '今天';
+  String get thisWeekDueDate => isEnglish ? 'This week' : '本周';
+  String get thisMonthDueDate => isEnglish ? 'This month' : '本月';
+  String get overdueDueDate => isEnglish ? 'Overdue' : '逾期';
+  String get noDueDateFilter => isEnglish ? 'No DueDate' : '无 DueDate';
+  String get noTags => isEnglish ? 'No tags' : '无 Tag';
+  String get sortLabel => isEnglish ? 'Sort' : '排序';
+  String get sortActiveNewest => isEnglish ? 'Active, newest' : '未完成，最新';
+  String get sortPriority => isEnglish ? 'Priority' : 'Priority';
+  String get sortDueDate => isEnglish ? 'DueDate' : 'DueDate';
+  String get sortTitleAscending => isEnglish ? 'Title A-Z' : '标题 A-Z';
+  String get sortTitleDescending => isEnglish ? 'Title Z-A' : '标题 Z-A';
   String get createTodo => isEnglish ? 'Create Todo' : '创建 Todo';
   String get newTodo => isEnglish ? 'New Todo' : '新建 Todo';
   String get editTodo => isEnglish ? 'Edit Todo' : '编辑 Todo';
