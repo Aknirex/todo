@@ -31,11 +31,7 @@ class DriftTodoWorkspaceStore implements TodoWorkspaceStore {
   @override
   Future<WorkspaceSnapshot> load() async {
     final lists = await database.loadLists();
-    final defaultList = lists.firstWhere((list) => list.isDefault);
-    return WorkspaceSnapshot(
-      lists: lists,
-      todos: await database.loadTodos(listId: defaultList.id),
-    );
+    return WorkspaceSnapshot(lists: lists, todos: await database.loadTodos());
   }
 
   @override

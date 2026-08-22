@@ -231,9 +231,6 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
             .where((match) => match.todo.completed)
             .toList(growable: false);
         final allTodos = workspace.current.todos;
-        final defaultList = workspace.current.lists.firstWhere(
-          (list) => list.isDefault,
-        );
         final hasQuery =
             _query.search.trim().isNotEmpty ||
             _query.priorities.isNotEmpty ||
@@ -262,8 +259,9 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    for (final list in workspace.current.lists) ...[
                     Text(
-                      defaultList.name,
+                      list.name,
                       style: Theme.of(context).textTheme.displaySmall,
                     ),
                     const SizedBox(height: AppSpacing.medium),
@@ -319,15 +317,22 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                     else ...[
                       _TodoSection(
                         title: l10n.activeTodos,
-                        matches: active,
+                        matches: active
+                            .where((match) => match.todo.listId == list.id)
+                            .toList(growable: false),
                         workspace: workspace,
                       ),
                       const SizedBox(height: AppSpacing.large),
                       _TodoSection(
                         title: l10n.completedTodos,
-                        matches: completed,
+                        matches: completed
+                            .where((match) => match.todo.listId == list.id)
+                            .toList(growable: false),
                         workspace: workspace,
                       ),
+                      const SizedBox(height: AppSpacing.large),
+                    ],
+                    const SizedBox(height: AppSpacing.large),
                     ],
                   ],
                 ),

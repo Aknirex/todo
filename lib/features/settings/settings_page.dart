@@ -159,14 +159,40 @@ class SettingsPage extends ConsumerWidget {
           .read(backupServiceProvider.future)
           .then((service) => service.importJson(source));
       if (context.mounted) {
-        final conflictText =
-            result.hasConflicts
-                ? ' ${l10n.importConflicts}: ${result.conflicts.length}'
-                : '';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.importSucceeded}$conflictText')),
-        );
+        if (result.hasConflicts) {
+          await showDialog<void>(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: Text(l10n.importConflicts),
+                  content: SingleChildScrollView(
+                    child: Text(
+                      result.conflicts
+                          .map(
+                            (conflict) =>
+                                '${conflict.recordType} ${conflict.id}: '
+                                '${conflict.reason}',
+                          )
+                          .join('\n'),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        MaterialLocalizations.of(context).closeButtonLabel,
+                      ),
+                    ),
+                  ],
+                ),
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.importSucceeded)));
+        }
       }
+      ref.invalidate(settingsControllerProvider);
       ref.invalidate(todoWorkspaceProvider);
     } on BackupValidationException {
       if (context.mounted) {

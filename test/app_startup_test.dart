@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -112,6 +113,21 @@ void main() {
       database: database,
       settingsStore: settings,
     );
+    var clipboardText = '';
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            clipboardText = (call.arguments as Map)['text'] as String;
+          }
+          if (call.method == 'Clipboard.getData') {
+            return {'text': clipboardText};
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
 
     await tester.pumpWidget(
       ProviderScope(
@@ -139,7 +155,56 @@ void main() {
     expect(settings.value.themeMode, ThemeMode.dark);
     expect(find.text('Settings'), findsOneWidget);
 
-    expect(find.byKey(const ValueKey('backup-export-button')), findsOneWidget);
-    expect(find.byKey(const ValueKey('backup-import-button')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('backup-export-button')));
+    await tester.pumpAndSettle();
+    expect(clipboardText, contains('"version":1'));
+  });
+
+  testWidgets('settings page imports a local JSON backup', (tester) async {
+    final settings = MemorySettingsStore(
+      const AppSettings(locale: Locale('en')),
+    );
+    final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
+    await workspace.start();
+    final database = AppDatabase.inMemory();
+    await database.initialize();
+    addTearDown(database.close);
+    final backupService = BackupService(
+      database: database,
+      settingsStore: settings,
+    );
+    final clipboardText = await backupService.exportJson();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.getData') {
+            return {'text': clipboardText};
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          settingsStoreProvider.overrideWithValue(settings),
+          todoWorkspaceProvider.overrideWith((ref) async => workspace),
+          backupServiceProvider.overrideWith((ref) async => backupService),
+        ],
+        child: const TodoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('backup-import-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('backup-import-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Backup imported successfully.'), findsOneWidget);
   });
 }

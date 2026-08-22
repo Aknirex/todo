@@ -155,7 +155,12 @@ class BackupService {
 }
 
 Map<String, Object?> _listToJson(WorkspaceList list) {
-  return {'id': list.id, 'name': list.name, 'isDefault': list.isDefault};
+  return {
+    'id': list.id,
+    'name': list.name,
+    'isDefault': list.isDefault,
+    'createdAt': (list.createdAt ?? DateTime.now()).toIso8601String(),
+  };
 }
 
 Map<String, Object?> _todoToJson(Todo todo) {
