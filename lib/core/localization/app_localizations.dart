@@ -70,6 +70,8 @@ class AppLocalizations {
   String get lowPriority => isEnglish ? 'Low' : 'Low';
   String get create => isEnglish ? 'Create' : '创建';
   String get save => isEnglish ? 'Save' : '保存';
+  String get saveFailed =>
+      isEnglish ? 'The Todo could not be saved.' : 'Todo 无法保存。';
   String get tagsHint =>
       isEnglish ? 'Separate tags with commas' : '使用逗号分隔多个 Tag';
   String get todoRow => isEnglish ? 'Todo row' : 'Todo 行';

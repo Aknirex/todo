@@ -36,42 +36,10 @@ class WorkspacePage extends ConsumerWidget {
         appBar: AppBar(
           title: Text(l10n.workspaceTitle),
           actions: [
-            IconButton(
-              tooltip: l10n.themeTooltip,
-              icon: const Icon(Icons.brightness_6_outlined),
-              onPressed: () => unawaited(_showThemeMenu(context, ref)),
+            _WorkspaceActions(
+              workspace: workspace,
+              onTheme: () => unawaited(_showThemeMenu(context, ref)),
             ),
-            IconButton(
-              tooltip: l10n.languageTooltip,
-              onPressed:
-                  () => unawaited(
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .setLocale(
-                          l10n.isEnglish
-                              ? const Locale('zh', 'CN')
-                              : const Locale('en'),
-                        ),
-                  ),
-              icon: Text(
-                l10n.currentLanguage,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-            TodoHistoryActions(workspace: workspace),
-            IconButton(
-              tooltip: l10n.settingsTooltip,
-              icon: const Icon(Icons.settings_outlined),
-              onPressed:
-                  () => unawaited(
-                    Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SettingsPage(),
-                      ),
-                    ),
-                  ),
-            ),
-            const SizedBox(width: AppSpacing.small),
           ],
         ),
         body: SafeArea(
@@ -153,6 +121,124 @@ class _ThemeOption extends StatelessWidget {
     );
   }
 }
+
+class _WorkspaceActions extends ConsumerWidget {
+  const _WorkspaceActions({required this.workspace, required this.onTheme});
+
+  final TodoWorkspace workspace;
+  final VoidCallback onTheme;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    if (MediaQuery.sizeOf(context).width < 600) {
+      return ListenableBuilder(
+        listenable: workspace,
+        builder:
+            (context, _) => PopupMenuButton<_WorkspaceAction>(
+              key: const ValueKey('workspace-actions-menu'),
+              tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+              onSelected: (action) {
+                switch (action) {
+                  case _WorkspaceAction.theme:
+                    onTheme();
+                  case _WorkspaceAction.language:
+                    unawaited(
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setLocale(
+                            l10n.isEnglish
+                                ? const Locale('zh', 'CN')
+                                : const Locale('en'),
+                          ),
+                    );
+                  case _WorkspaceAction.undo:
+                    unawaited(workspace.undo());
+                  case _WorkspaceAction.redo:
+                    unawaited(workspace.redo());
+                  case _WorkspaceAction.settings:
+                    unawaited(
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsPage(),
+                        ),
+                      ),
+                    );
+                }
+              },
+              itemBuilder:
+                  (context) => [
+                    PopupMenuItem(
+                      value: _WorkspaceAction.theme,
+                      child: Text(l10n.themeMenuLabel),
+                    ),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.language,
+                      child: Text(l10n.languageTooltip),
+                    ),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.undo,
+                      enabled: workspace.canUndo,
+                      child: Text(l10n.undo),
+                    ),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.redo,
+                      enabled: workspace.canRedo,
+                      child: Text(l10n.redo),
+                    ),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.settings,
+                      child: Text(l10n.settingsTitle),
+                    ),
+                  ],
+              icon: const Icon(Icons.more_vert),
+            ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: l10n.themeTooltip,
+          icon: const Icon(Icons.brightness_6_outlined),
+          onPressed: onTheme,
+        ),
+        IconButton(
+          tooltip: l10n.languageTooltip,
+          onPressed:
+              () => unawaited(
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .setLocale(
+                      l10n.isEnglish
+                          ? const Locale('zh', 'CN')
+                          : const Locale('en'),
+                    ),
+              ),
+          icon: Text(
+            l10n.currentLanguage,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        TodoHistoryActions(workspace: workspace),
+        IconButton(
+          tooltip: l10n.settingsTooltip,
+          icon: const Icon(Icons.settings_outlined),
+          onPressed:
+              () => unawaited(
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+                ),
+              ),
+        ),
+        const SizedBox(width: AppSpacing.small),
+      ],
+    );
+  }
+}
+
+enum _WorkspaceAction { theme, language, undo, redo, settings }
 
 class _WorkspaceContent extends StatefulWidget {
   const _WorkspaceContent({required this.workspace});
@@ -239,104 +325,140 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
             _query.dueDateFilters.isNotEmpty;
         return Scaffold(
           backgroundColor: Colors.transparent,
-          floatingActionButton: FloatingActionButton(
-            tooltip: l10n.createTodo,
-            onPressed:
-                () => unawaited(
-                  Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => TodoEditorPage(workspace: workspace),
-                    ),
+          floatingActionButton:
+              workspace.current.lists.isEmpty
+                  ? null
+                  : FloatingActionButton(
+                    tooltip: l10n.createTodo,
+                    onPressed:
+                        () => unawaited(
+                          Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder:
+                                  (_) => TodoEditorPage(workspace: workspace),
+                            ),
+                          ),
+                        ),
+                    child: const Icon(Icons.add),
+                  ),
+          body: Center(
+            child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(
+                0,
+                AppSpacing.medium,
+                0,
+                AppSpacing.section + AppDimensions.appBarHeight,
+              ),
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (workspace.current.lists.isEmpty)
+                        const _EmptyWorkspaceState()
+                      else
+                        for (final list in workspace.current.lists) ...[
+                          Text(
+                            list.name,
+                            style: Theme.of(context).textTheme.displaySmall,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSpacing.xSmall),
+                          Text(
+                            l10n.workspaceSubtitle,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSpacing.medium),
+                          TextField(
+                            key: const ValueKey('todo-search-input'),
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                            textInputAction: TextInputAction.search,
+                            scrollPadding: const EdgeInsets.only(
+                              bottom:
+                                  AppSpacing.section +
+                                  AppDimensions.appBarHeight,
+                            ),
+                            decoration: InputDecoration(
+                              labelText: l10n.searchTodos,
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.always,
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon:
+                                  _searchController.text.isEmpty
+                                      ? null
+                                      : IconButton(
+                                        tooltip:
+                                            MaterialLocalizations.of(
+                                              context,
+                                            ).deleteButtonTooltip,
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _onSearchChanged('');
+                                          setState(() {});
+                                        },
+                                        icon: const Icon(Icons.clear),
+                                      ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.small),
+                          _QueryControls(
+                            query: _query,
+                            availableTags: allTodos
+                                .expand((todo) => todo.tags)
+                                .toSet()
+                                .toList(growable: false),
+                            onPrioritySelected: _togglePriority,
+                            onTagSelected: _toggleTag,
+                            onCompletedSelected:
+                                (completed) => _setQuery(
+                                  completed == null
+                                      ? _query.copyWith(clearCompleted: true)
+                                      : _query.copyWith(completed: completed),
+                                ),
+                            onDueDateSelected: _toggleDueDate,
+                            onSortSelected:
+                                (sort) =>
+                                    _setQuery(_query.copyWith(sort: sort)),
+                          ),
+                          const SizedBox(height: AppSpacing.section),
+                          if (result.matches.isEmpty &&
+                              hasQuery &&
+                              allTodos.isNotEmpty)
+                            _EmptyQueryState(onClear: _clearQuery)
+                          else ...[
+                            _TodoSection(
+                              title: l10n.activeTodos,
+                              matches: active
+                                  .where(
+                                    (match) => match.todo.listId == list.id,
+                                  )
+                                  .toList(growable: false),
+                              workspace: workspace,
+                            ),
+                            const SizedBox(height: AppSpacing.large),
+                            _TodoSection(
+                              title: l10n.completedTodos,
+                              matches: completed
+                                  .where(
+                                    (match) => match.todo.listId == list.id,
+                                  )
+                                  .toList(growable: false),
+                              workspace: workspace,
+                            ),
+                            const SizedBox(height: AppSpacing.large),
+                          ],
+                          const SizedBox(height: AppSpacing.large),
+                        ],
+                    ],
                   ),
                 ),
-            child: const Icon(Icons.add),
-          ),
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.medium),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final list in workspace.current.lists) ...[
-                      Text(
-                        list.name,
-                        style: Theme.of(context).textTheme.displaySmall,
-                      ),
-                      const SizedBox(height: AppSpacing.medium),
-                      TextField(
-                        key: const ValueKey('todo-search-input'),
-                        controller: _searchController,
-                        onChanged: _onSearchChanged,
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          labelText: l10n.searchTodos,
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon:
-                              _searchController.text.isEmpty
-                                  ? null
-                                  : IconButton(
-                                    tooltip:
-                                        MaterialLocalizations.of(
-                                          context,
-                                        ).deleteButtonTooltip,
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _onSearchChanged('');
-                                      setState(() {});
-                                    },
-                                    icon: const Icon(Icons.clear),
-                                  ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.small),
-                      _QueryControls(
-                        query: _query,
-                        availableTags: allTodos
-                            .expand((todo) => todo.tags)
-                            .toSet()
-                            .toList(growable: false),
-                        onPrioritySelected: _togglePriority,
-                        onTagSelected: _toggleTag,
-                        onCompletedSelected:
-                            (completed) => _setQuery(
-                              completed == null
-                                  ? _query.copyWith(clearCompleted: true)
-                                  : _query.copyWith(completed: completed),
-                            ),
-                        onDueDateSelected: _toggleDueDate,
-                        onSortSelected:
-                            (sort) => _setQuery(_query.copyWith(sort: sort)),
-                      ),
-                      const SizedBox(height: AppSpacing.section),
-                      if (result.matches.isEmpty &&
-                          hasQuery &&
-                          allTodos.isNotEmpty)
-                        _EmptyQueryState(onClear: _clearQuery)
-                      else ...[
-                        _TodoSection(
-                          title: l10n.activeTodos,
-                          matches: active
-                              .where((match) => match.todo.listId == list.id)
-                              .toList(growable: false),
-                          workspace: workspace,
-                        ),
-                        const SizedBox(height: AppSpacing.large),
-                        _TodoSection(
-                          title: l10n.completedTodos,
-                          matches: completed
-                              .where((match) => match.todo.listId == list.id)
-                              .toList(growable: false),
-                          workspace: workspace,
-                        ),
-                        const SizedBox(height: AppSpacing.large),
-                      ],
-                      const SizedBox(height: AppSpacing.large),
-                    ],
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
         );
@@ -401,42 +523,47 @@ class _QueryControls extends StatelessWidget {
                         child: Text(l10n.completedFilter),
                       ),
                     ],
-                child: Text(_statusLabel(l10n, query.completed)),
+                child: _FilterButtonLabel(
+                  label: _statusLabel(l10n, query.completed),
+                ),
               ),
               _DueDateMenu(query: query, onSelected: onDueDateSelected),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.small),
-        DropdownButtonFormField<TodoSort>(
-          key: const ValueKey('todo-sort-filter'),
-          initialValue: query.sort,
-          decoration: InputDecoration(labelText: l10n.sortLabel),
-          items: [
-            DropdownMenuItem(
-              value: TodoSort.activeNewest,
-              child: Text(l10n.sortActiveNewest),
-            ),
-            DropdownMenuItem(
-              value: TodoSort.priority,
-              child: Text(l10n.sortPriority),
-            ),
-            DropdownMenuItem(
-              value: TodoSort.dueDate,
-              child: Text(l10n.sortDueDate),
-            ),
-            DropdownMenuItem(
-              value: TodoSort.titleAscending,
-              child: Text(l10n.sortTitleAscending),
-            ),
-            DropdownMenuItem(
-              value: TodoSort.titleDescending,
-              child: Text(l10n.sortTitleDescending),
-            ),
-          ],
-          onChanged: (sort) {
-            if (sort != null) onSortSelected(sort);
-          },
+        KeyedSubtree(
+          key: ValueKey('todo-sort-value-${query.sort.name}'),
+          child: DropdownButtonFormField<TodoSort>(
+            key: const ValueKey('todo-sort-filter'),
+            initialValue: query.sort,
+            decoration: InputDecoration(labelText: l10n.sortLabel),
+            items: [
+              DropdownMenuItem(
+                value: TodoSort.activeNewest,
+                child: Text(l10n.sortActiveNewest),
+              ),
+              DropdownMenuItem(
+                value: TodoSort.priority,
+                child: Text(l10n.sortPriority),
+              ),
+              DropdownMenuItem(
+                value: TodoSort.dueDate,
+                child: Text(l10n.sortDueDate),
+              ),
+              DropdownMenuItem(
+                value: TodoSort.titleAscending,
+                child: Text(l10n.sortTitleAscending),
+              ),
+              DropdownMenuItem(
+                value: TodoSort.titleDescending,
+                child: Text(l10n.sortTitleDescending),
+              ),
+            ],
+            onChanged: (sort) {
+              if (sort != null) onSortSelected(sort);
+            },
+          ),
         ),
       ],
     );
@@ -481,7 +608,7 @@ class _PriorityMenu extends StatelessWidget {
                 ),
               )
               .toList(growable: false),
-      child: Text(l10n.filterPriority),
+      child: _FilterButtonLabel(label: l10n.filterPriority),
     );
   }
 }
@@ -517,7 +644,7 @@ class _TagMenu extends StatelessWidget {
             )
             .toList(growable: false);
       },
-      child: Text(l10n.filterTags),
+      child: _FilterButtonLabel(label: l10n.filterTags),
     );
   }
 }
@@ -551,7 +678,7 @@ class _DueDateMenu extends StatelessWidget {
                 ),
               )
               .toList(growable: false),
-      child: Text(l10n.filterDueDate),
+      child: _FilterButtonLabel(label: l10n.filterDueDate),
     );
   }
 }
@@ -570,6 +697,12 @@ class _EmptyQueryState extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.large),
         child: Column(
           children: [
+            Icon(
+              Icons.search_off_outlined,
+              size: 32,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: AppSpacing.small),
             Text(l10n.noMatchingTodos),
             const SizedBox(height: AppSpacing.small),
             TextButton(
@@ -577,6 +710,37 @@ class _EmptyQueryState extends StatelessWidget {
               onPressed: onClear,
               child: Text(l10n.clearSearchAndFilters),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyWorkspaceState extends StatelessWidget {
+  const _EmptyWorkspaceState();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.large),
+        child: Column(
+          children: [
+            Icon(
+              Icons.checklist_outlined,
+              size: 40,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: AppSpacing.medium),
+            Text(
+              l10n.emptyWorkspace,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.small),
+            Text(l10n.emptyWorkspaceHint, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -654,9 +818,13 @@ class _TodoRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Checkbox(
-                value: todo.completed,
-                onChanged: (_) => unawaited(workspace.toggleTodo(todo.id)),
+              SizedBox(
+                width: AppDimensions.minimumTouchTarget,
+                height: AppDimensions.minimumTouchTarget,
+                child: Checkbox(
+                  value: todo.completed,
+                  onChanged: (_) => unawaited(workspace.toggleTodo(todo.id)),
+                ),
               ),
               Expanded(
                 child: InkWell(
@@ -672,14 +840,29 @@ class _TodoRow extends StatelessWidget {
                           ),
                         ),
                       ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child:
-                        todo.title.isEmpty
-                            ? const SizedBox(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: AppDimensions.minimumTouchTarget,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (todo.title.isEmpty)
+                            const SizedBox(
                               height: AppDimensions.minimumTouchTarget,
                             )
-                            : _HighlightedTitle(match: match),
+                          else
+                            _HighlightedTitle(match: match),
+                          if (todo.tags.isNotEmpty || todo.dueDate != null) ...[
+                            const SizedBox(height: AppSpacing.xSmall),
+                            _TodoMetadata(todo: todo),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -708,6 +891,8 @@ class _HighlightedTitle extends StatelessWidget {
     if (match.titleRanges.isEmpty) {
       return Text(
         title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
         style:
             match.todo.completed
                 ? const TextStyle(decoration: TextDecoration.lineThrough)
@@ -733,11 +918,89 @@ class _HighlightedTitle extends StatelessWidget {
       spans.add(TextSpan(text: title.substring(cursor)));
     }
     return RichText(
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
       text: TextSpan(
         style: DefaultTextStyle.of(context).style.copyWith(
           decoration: match.todo.completed ? TextDecoration.lineThrough : null,
         ),
         children: spans,
+      ),
+    );
+  }
+}
+
+class _FilterButtonLabel extends StatelessWidget {
+  const _FilterButtonLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: AppDimensions.minimumTouchTarget,
+        minHeight: AppDimensions.minimumTouchTarget,
+      ),
+      child: Center(
+        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ),
+    );
+  }
+}
+
+class _TodoMetadata extends StatelessWidget {
+  const _TodoMetadata({required this.todo});
+
+  final Todo todo;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final labels = <String>[
+      if (todo.dueDate != null)
+        MaterialLocalizations.of(context).formatCompactDate(todo.dueDate!),
+      ...todo.tags,
+    ];
+    return Wrap(
+      spacing: AppSpacing.xSmall,
+      runSpacing: AppSpacing.xSmall,
+      children: [
+        _MetadataBadge(
+          label: _priorityLabel(l10n, todo.priority),
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        for (final label in labels) _MetadataBadge(label: label),
+      ],
+    );
+  }
+}
+
+class _MetadataBadge extends StatelessWidget {
+  const _MetadataBadge({required this.label, this.color});
+
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color?.withValues(alpha: 0.12) ?? scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.small,
+          vertical: AppSpacing.xSmall,
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }

@@ -57,6 +57,76 @@ abstract final class AppTheme {
           vertical: AppSpacing.medium,
         ),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(
+            double.infinity,
+            AppDimensions.minimumTouchTarget,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(
+            double.infinity,
+            AppDimensions.minimumTouchTarget,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(
+            AppDimensions.minimumTouchTarget,
+            AppDimensions.minimumTouchTarget,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.small),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.medium),
+        ),
+        menuPadding: const EdgeInsets.symmetric(vertical: AppSpacing.small),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor:
+            isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.large),
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.large),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.medium),
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        visualDensity: VisualDensity.standard,
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.small),
+        ),
+      ),
+      radioTheme: RadioThemeData(
+        visualDensity: VisualDensity.standard,
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.medium),

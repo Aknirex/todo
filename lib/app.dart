@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/design_system/app_theme.dart';
@@ -32,6 +33,22 @@ class TodoApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
+      builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: (isDark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark)
+              .copyWith(
+                statusBarColor: Colors.transparent,
+                systemNavigationBarColor:
+                    Theme.of(context).scaffoldBackgroundColor,
+                systemNavigationBarDividerColor:
+                    Theme.of(context).scaffoldBackgroundColor,
+              ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const WorkspaceRoute(),
     );
   }

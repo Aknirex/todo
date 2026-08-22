@@ -110,10 +110,28 @@ class _TodoEditorPageState extends State<TodoEditorPage>
   Future<void> _leaveFromPageBack() async {
     if (_leaving) return;
     _leaving = true;
-    if (!widget.isNew) {
-      await widget.workspace.updateTodo(_draftTodo());
+    try {
+      if (!widget.isNew) {
+        await widget.workspace.updateTodo(_draftTodo());
+      }
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      _leaving = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).saveFailed)),
+        );
+      }
     }
-    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _saveDraftAfterSystemPop() async {
+    if (widget.isNew) return;
+    try {
+      await widget.workspace.updateTodo(_draftTodo());
+    } catch (_) {
+      // The route has already left the tree for a native back gesture.
+    }
   }
 
   Future<void> _createTodo() async {
@@ -178,9 +196,12 @@ class _TodoEditorPageState extends State<TodoEditorPage>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return PopScope<void>(
-      canPop: false,
+      canPop: !_shouldDismissKeyboard && !_leaving,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+        if (didPop) {
+          if (!_leaving) unawaited(_saveDraftAfterSystemPop());
+          return;
+        }
         if (_shouldDismissKeyboard) {
           _dismissKeyboard();
         } else {
@@ -243,29 +264,32 @@ class _TodoEditorPageState extends State<TodoEditorPage>
                       decoration: InputDecoration(labelText: l10n.detailLabel),
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    DropdownButtonFormField<TodoPriority>(
-                      key: const ValueKey('todo-priority-input'),
-                      initialValue: _priority,
-                      decoration: InputDecoration(
-                        labelText: l10n.priorityLabel,
+                    KeyedSubtree(
+                      key: ValueKey('todo-priority-value-${_priority.name}'),
+                      child: DropdownButtonFormField<TodoPriority>(
+                        key: const ValueKey('todo-priority-input'),
+                        initialValue: _priority,
+                        decoration: InputDecoration(
+                          labelText: l10n.priorityLabel,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: TodoPriority.high,
+                            child: Text(l10n.highPriority),
+                          ),
+                          DropdownMenuItem(
+                            value: TodoPriority.medium,
+                            child: Text(l10n.mediumPriority),
+                          ),
+                          DropdownMenuItem(
+                            value: TodoPriority.low,
+                            child: Text(l10n.lowPriority),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) setState(() => _priority = value);
+                        },
                       ),
-                      items: [
-                        DropdownMenuItem(
-                          value: TodoPriority.high,
-                          child: Text(l10n.highPriority),
-                        ),
-                        DropdownMenuItem(
-                          value: TodoPriority.medium,
-                          child: Text(l10n.mediumPriority),
-                        ),
-                        DropdownMenuItem(
-                          value: TodoPriority.low,
-                          child: Text(l10n.lowPriority),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) setState(() => _priority = value);
-                      },
                     ),
                     const SizedBox(height: AppSpacing.medium),
                     InputDecorator(
