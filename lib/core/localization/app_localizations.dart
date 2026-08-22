@@ -31,6 +31,23 @@ class AppLocalizations {
   String get completedTodos => isEnglish ? 'Completed' : '已完成';
   String get noTodos => isEnglish ? 'No Todos yet.' : '还没有 Todo。';
   String get createTodo => isEnglish ? 'Create Todo' : '创建 Todo';
+  String get newTodo => isEnglish ? 'New Todo' : '新建 Todo';
+  String get editTodo => isEnglish ? 'Edit Todo' : '编辑 Todo';
+  String get titleLabel => isEnglish ? 'Title' : '标题';
+  String get detailLabel => isEnglish ? 'Detail' : '详情';
+  String get priorityLabel => isEnglish ? 'Priority' : 'Priority';
+  String get dueDateLabel => isEnglish ? 'DueDate' : 'DueDate';
+  String get tagsLabel => isEnglish ? 'Tags' : 'Tag';
+  String get noDueDate => isEnglish ? 'No DueDate' : '无 DueDate';
+  String get clearDueDate => isEnglish ? 'Clear DueDate' : '清除 DueDate';
+  String get highPriority => isEnglish ? 'High' : 'High';
+  String get mediumPriority => isEnglish ? 'Medium' : 'Medium';
+  String get lowPriority => isEnglish ? 'Low' : 'Low';
+  String get create => isEnglish ? 'Create' : '创建';
+  String get save => isEnglish ? 'Save' : '保存';
+  String get tagsHint => isEnglish
+      ? 'Separate tags with commas'
+      : '使用逗号分隔多个 Tag';
   String get todoRow => isEnglish ? 'Todo row' : 'Todo 行';
   String get languageTooltip => isEnglish ? '切换到简体中文' : 'Switch to English';
   String get themeTooltip => isEnglish ? 'Change theme' : '切换主题';

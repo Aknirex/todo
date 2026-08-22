@@ -156,6 +156,27 @@ class AppDatabase {
     );
   }
 
+  Future<void> updateTodo(Todo todo) async {
+    await initialize();
+    await _executor.runCustom(
+      '''
+        UPDATE todos
+        SET title = ?, detail = ?, priority = ?, due_date = ?, tags = ?,
+            updated_at = ?
+        WHERE id = ?
+      ''',
+      [
+        todo.title,
+        todo.detail,
+        todo.priority.value,
+        _encodeDueDate(todo.dueDate),
+        jsonEncode(todo.tags),
+        todo.updatedAt.microsecondsSinceEpoch,
+        todo.id,
+      ],
+    );
+  }
+
   Todo _todoFromRow(Map<String, Object?> row) {
     final tagsValue = row['tags']! as String;
     final decodedTags = jsonDecode(tagsValue);

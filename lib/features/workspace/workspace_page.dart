@@ -8,6 +8,7 @@ import '../../core/design_system/design_tokens.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../providers.dart';
 import 'todo.dart';
+import 'todo_editor_page.dart';
 import 'todo_workspace.dart';
 
 class WorkspacePage extends ConsumerWidget {
@@ -158,7 +159,13 @@ class _WorkspaceContent extends StatelessWidget {
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton(
             tooltip: l10n.createTodo,
-            onPressed: () => unawaited(workspace.createTodo()),
+            onPressed: () => unawaited(
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => TodoEditorPage(workspace: workspace),
+                ),
+              ),
+            ),
             child: const Icon(Icons.add),
           ),
           body: Center(
@@ -259,16 +266,33 @@ class _TodoRow extends StatelessWidget {
                 onChanged: (_) => unawaited(workspace.toggleTodo(todo.id)),
               ),
               Expanded(
-                child: todo.title.isEmpty
-                    ? const SizedBox(height: AppDimensions.minimumTouchTarget)
-                    : Text(
-                        todo.title,
-                        style: todo.completed
-                            ? const TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                              )
-                            : null,
+                child: InkWell(
+                  onTap: () => unawaited(
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => TodoEditorPage(
+                          workspace: workspace,
+                          todo: todo,
+                        ),
                       ),
+                    ),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: todo.title.isEmpty
+                        ? const SizedBox(
+                            height: AppDimensions.minimumTouchTarget,
+                          )
+                        : Text(
+                            todo.title,
+                            style: todo.completed
+                                ? const TextStyle(
+                                    decoration: TextDecoration.lineThrough,
+                                  )
+                                : null,
+                          ),
+                  ),
+                ),
               ),
             ],
           ),

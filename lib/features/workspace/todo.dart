@@ -24,7 +24,7 @@ class Todo {
     required this.createdAt,
     required this.updatedAt,
   })  : dueDate = _dateOnly(dueDate),
-        tags = List.unmodifiable(_normalizeTags(tags));
+        tags = List.unmodifiable(normalizeTodoTags(tags));
 
   factory Todo.create({
     required String id,
@@ -94,7 +94,7 @@ DateTime? _dateOnly(DateTime? date) {
   return DateTime(date.year, date.month, date.day);
 }
 
-List<String> _normalizeTags(Iterable<String> tags) {
+List<String> normalizeTodoTags(Iterable<String> tags) {
   final result = <String>[];
   for (final tag in tags) {
     final normalized = tag.trim();

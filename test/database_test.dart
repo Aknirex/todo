@@ -112,4 +112,44 @@ void main() {
     expect(saved.completed, isTrue);
     expect(saved.updatedAt, DateTime(2026, 1, 4));
   });
+
+  test('Drift updates editable Todo fields while preserving completion', () async {
+    final database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+    final todo = Todo.create(
+      id: 'edit',
+      listId: 'default',
+      completed: true,
+      createdAt: DateTime(2026, 1, 1, 10),
+      updatedAt: DateTime(2026, 1, 1, 10),
+    );
+
+    await database.insertTodo(todo);
+    await database.updateTodo(
+      todo.copyWith(
+        title: 'Updated title',
+        detail: 'Updated detail',
+        priority: TodoPriority.low,
+        dueDate: DateTime.utc(2026, 4, 5, 22),
+        tags: const [' work ', '', 'work', 'home'],
+        updatedAt: DateTime(2026, 1, 2, 12),
+      ),
+    );
+
+    final saved = (await database.loadTodos()).single;
+    expect(saved.title, 'Updated title');
+    expect(saved.detail, 'Updated detail');
+    expect(saved.priority, TodoPriority.low);
+    expect(saved.dueDate, DateTime(2026, 4, 5));
+    expect(saved.dueDate!.isUtc, isFalse);
+    expect(saved.tags, ['work', 'home']);
+    expect(saved.completed, isTrue);
+    expect(saved.createdAt, todo.createdAt);
+    expect(saved.updatedAt, DateTime(2026, 1, 2, 12));
+  });
 }

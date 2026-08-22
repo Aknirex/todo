@@ -52,7 +52,7 @@ void main() {
     expect(find.byTooltip('切换到简体中文'), findsOneWidget);
   });
 
-  testWidgets('home shows active and completed Todo sections and creates blank Todo',
+  testWidgets('home opens a blank Todo editor and creates only on confirmation',
       (tester) async {
     final settings = MemorySettingsStore(const AppSettings());
     final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
@@ -74,6 +74,12 @@ void main() {
     expect(find.byTooltip('Create Todo'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Create Todo'));
+    await tester.pumpAndSettle();
+
+    expect(workspace.current.todos, isEmpty);
+    expect(find.byKey(const ValueKey('todo-detail-input')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('todo-create-button')));
     await tester.pumpAndSettle();
 
     expect(workspace.current.todos, hasLength(1));

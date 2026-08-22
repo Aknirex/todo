@@ -20,6 +20,8 @@ abstract interface class TodoWorkspaceStore {
     bool completed,
     DateTime updatedAt,
   );
+
+  Future<void> updateTodo(Todo todo);
 }
 
 class DriftTodoWorkspaceStore implements TodoWorkspaceStore {
@@ -48,6 +50,9 @@ class DriftTodoWorkspaceStore implements TodoWorkspaceStore {
   ) {
     return database.updateTodoCompletion(id, completed, updatedAt);
   }
+
+  @override
+  Future<void> updateTodo(Todo todo) => database.updateTodo(todo);
 }
 
 class MemoryTodoWorkspaceStore implements TodoWorkspaceStore {
@@ -103,6 +108,13 @@ class MemoryTodoWorkspaceStore implements TodoWorkspaceStore {
       completed: completed,
       updatedAt: updatedAt,
     );
+  }
+
+  @override
+  Future<void> updateTodo(Todo todo) async {
+    final index = todos.indexWhere((item) => item.id == todo.id);
+    if (index == -1) return;
+    todos[index] = todo;
   }
 }
 
@@ -162,10 +174,33 @@ class TodoWorkspace extends ChangeNotifier {
     await read();
   }
 
+  Future<bool> updateTodo(Todo todo) async {
+    final currentTodo = current.todos.firstWhere((item) => item.id == todo.id);
+    if (_sameEditableFields(currentTodo, todo)) return false;
+
+    await store.updateTodo(todo.copyWith(updatedAt: DateTime.now()));
+    await read();
+    return true;
+  }
+
   WorkspaceSnapshot get current =>
       _snapshot ??
           const WorkspaceSnapshot(
             lists: <WorkspaceList>[],
             todos: <Todo>[],
           );
+}
+
+bool _sameEditableFields(Todo first, Todo second) {
+  if (first.title != second.title ||
+      first.detail != second.detail ||
+      first.priority != second.priority ||
+      first.dueDate != second.dueDate ||
+      first.tags.length != second.tags.length) {
+    return false;
+  }
+  for (var index = 0; index < first.tags.length; index++) {
+    if (first.tags[index] != second.tags[index]) return false;
+  }
+  return true;
 }
