@@ -197,9 +197,10 @@ class AppDatabase implements QueryExecutorUser {
       detail: row['detail']! as String,
       priority: todoPriorityFromValue(row['priority']! as String),
       dueDate: _decodeDueDate(row['due_date'] as String?),
-      tags: decodedTags is List
-          ? decodedTags.whereType<String>()
-          : const <String>[],
+      tags:
+          decodedTags is List
+              ? decodedTags.whereType<String>()
+              : const <String>[],
       completed: (row['completed']! as int) == 1,
       createdAt: DateTime.fromMicrosecondsSinceEpoch(row['created_at']! as int),
       updatedAt: DateTime.fromMicrosecondsSinceEpoch(row['updated_at']! as int),

@@ -47,25 +47,31 @@ void main() {
     expect(workspace.current.todos.single.id, todo.id);
   });
 
-  test('workspace toggles completion and keeps newest active Todo first', () async {
-    final store = MemoryTodoWorkspaceStore();
-    final workspace = TodoWorkspace(store);
-    await workspace.start();
-    final older = await workspace.createTodo(title: 'Older');
-    final newer = await workspace.createTodo(title: 'Newer');
+  test(
+    'workspace toggles completion and keeps newest active Todo first',
+    () async {
+      final store = MemoryTodoWorkspaceStore();
+      final workspace = TodoWorkspace(store);
+      await workspace.start();
+      final older = await workspace.createTodo(title: 'Older');
+      await workspace.createTodo(title: 'Newer');
 
-    expect(
-      workspace.current.todos.map((todo) => todo.title).toList(growable: false),
-      ['Newer', 'Older'],
-    );
+      expect(
+        workspace.current.todos
+            .map((todo) => todo.title)
+            .toList(growable: false),
+        ['Newer', 'Older'],
+      );
 
-    await workspace.toggleTodo(older.id);
+      await workspace.toggleTodo(older.id);
 
-    expect(
-      workspace.current.todos.map((todo) => todo.title).toList(growable: false),
-      ['Newer', 'Older'],
-    );
-    expect(workspace.current.todos.last.completed, isTrue);
+      expect(
+        workspace.current.todos
+            .map((todo) => todo.title)
+            .toList(growable: false),
+        ['Newer', 'Older'],
+      );
+      expect(workspace.current.todos.last.completed, isTrue);
 
     final restarted = TodoWorkspace(store);
     await restarted.start();

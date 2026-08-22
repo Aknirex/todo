@@ -294,8 +294,8 @@ class _TodoRow extends StatelessWidget {
                                   )
                                 : null,
                           ),
+                    ),
                   ),
-                ),
               ),
             ],
           ),

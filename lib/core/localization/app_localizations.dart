@@ -22,9 +22,10 @@ class AppLocalizations {
       isEnglish ? 'A calm place for the next thing.' : '专注记录下一件要做的事。';
   String get emptyWorkspace =>
       isEnglish ? 'Your workspace is ready.' : '工作区已准备就绪。';
-  String get emptyWorkspaceHint => isEnglish
-      ? 'Todo actions will appear here in the next layer.'
-      : 'Todo 行为将在后续应用层接入。';
+  String get emptyWorkspaceHint =>
+      isEnglish
+          ? 'Todo actions will appear here in the next layer.'
+          : 'Todo 行为将在后续应用层接入。';
   String get defaultList => isEnglish ? 'Default List' : '默认 List';
   String get activeTodos => isEnglish ? 'Active' : '未完成';
   String get completedTodos => isEnglish ? 'Completed' : '已完成';

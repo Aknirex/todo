@@ -57,34 +57,32 @@ class DriftTodoWorkspaceStore implements TodoWorkspaceStore {
 
 class MemoryTodoWorkspaceStore implements TodoWorkspaceStore {
   MemoryTodoWorkspaceStore({List<WorkspaceList>? lists, List<Todo>? todos})
-      : lists = lists ??
-            const [
-              WorkspaceList(
-                id: 'default',
-                name: 'Default List',
-                isDefault: true,
-              ),
-            ],
-        todos = List<Todo>.of(todos ?? const <Todo>[]);
+    : lists =
+          lists ??
+          const [
+            WorkspaceList(id: 'default', name: 'Default List', isDefault: true),
+          ],
+      todos = List<Todo>.of(todos ?? const <Todo>[]);
 
   final List<WorkspaceList> lists;
   final List<Todo> todos;
 
   @override
   Future<WorkspaceSnapshot> load() async {
-    final sortedTodos = todos.toList()
-      ..sort((a, b) {
-        final completedOrder = a.completed == b.completed
-            ? 0
-            : a.completed
-                ? 1
-                : -1;
-        return completedOrder != 0
-            ? completedOrder
-            : b.createdAt.compareTo(a.createdAt) != 0
-                ? b.createdAt.compareTo(a.createdAt)
-                : b.id.compareTo(a.id);
-      });
+    final sortedTodos =
+        todos.toList()..sort((a, b) {
+          final completedOrder =
+              a.completed == b.completed
+                  ? 0
+                  : a.completed
+                  ? 1
+                  : -1;
+          return completedOrder != 0
+              ? completedOrder
+              : b.createdAt.compareTo(a.createdAt) != 0
+              ? b.createdAt.compareTo(a.createdAt)
+              : b.id.compareTo(a.id);
+        });
     return WorkspaceSnapshot(
       lists: List.unmodifiable(lists),
       todos: List.unmodifiable(sortedTodos),
@@ -146,8 +144,8 @@ class TodoWorkspace extends ChangeNotifier {
     Iterable<String> tags = const <String>[],
   }) async {
     final activeSnapshot = _snapshot ?? await read();
-    final targetListId = listId ??
-        activeSnapshot.lists.firstWhere((list) => list.isDefault).id;
+    final targetListId =
+        listId ?? activeSnapshot.lists.firstWhere((list) => list.isDefault).id;
     final now = DateTime.now();
     final todo = Todo.create(
       id: '${now.microsecondsSinceEpoch}-${_idSequence++}',
@@ -166,11 +164,7 @@ class TodoWorkspace extends ChangeNotifier {
 
   Future<void> toggleTodo(String id) async {
     final todo = current.todos.firstWhere((item) => item.id == id);
-    await store.updateTodoCompletion(
-      id,
-      !todo.completed,
-      DateTime.now(),
-    );
+    await store.updateTodoCompletion(id, !todo.completed, DateTime.now());
     await read();
   }
 
@@ -185,10 +179,7 @@ class TodoWorkspace extends ChangeNotifier {
 
   WorkspaceSnapshot get current =>
       _snapshot ??
-          const WorkspaceSnapshot(
-            lists: <WorkspaceList>[],
-            todos: <Todo>[],
-          );
+      const WorkspaceSnapshot(lists: <WorkspaceList>[], todos: <Todo>[]);
 }
 
 bool _sameEditableFields(Todo first, Todo second) {
