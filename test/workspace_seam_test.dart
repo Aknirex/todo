@@ -120,18 +120,17 @@ class _CountingTodoWorkspaceStore implements TodoWorkspaceStore {
   Future<WorkspaceSnapshot> load() => _delegate.load();
 
   @override
-  Future<void> insertTodo(Todo todo) => _delegate.insertTodo(todo);
+  Future<TodoCommandHistory> loadHistory() => _delegate.loadHistory();
 
   @override
-  Future<void> updateTodoCompletion(
-    String id,
-    bool completed,
-    DateTime updatedAt,
-  ) => _delegate.updateTodoCompletion(id, completed, updatedAt);
-
-  @override
-  Future<void> updateTodo(Todo todo) async {
-    updateCount++;
-    await _delegate.updateTodo(todo);
+  Future<void> applyBusinessCommand(TodoCommand command) {
+    if (command.type == TodoCommandType.update) updateCount++;
+    return _delegate.applyBusinessCommand(command);
   }
+
+  @override
+  Future<bool> undoCommand() => _delegate.undoCommand();
+
+  @override
+  Future<bool> redoCommand() => _delegate.redoCommand();
 }

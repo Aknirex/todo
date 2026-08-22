@@ -7,6 +7,7 @@ import '../../core/design_system/design_tokens.dart';
 import '../../core/localization/app_localizations.dart';
 import 'todo.dart';
 import 'todo_workspace.dart';
+import 'todo_history_actions.dart';
 
 class TodoEditorPage extends StatefulWidget {
   const TodoEditorPage({required this.workspace, this.todo, super.key});
@@ -128,6 +129,36 @@ class _TodoEditorPageState extends State<TodoEditorPage>
     if (mounted) Navigator.of(context).pop();
   }
 
+  Future<void> _deleteTodo() async {
+    if (_leaving || widget.todo == null) return;
+    _leaving = true;
+    await widget.workspace.deleteTodo(widget.todo!.id);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _handleHistoryChanged() async {
+    if (!mounted || widget.todo == null) return;
+    Todo? current;
+    for (final todo in widget.workspace.current.todos) {
+      if (todo.id == widget.todo!.id) {
+        current = todo;
+        break;
+      }
+    }
+    if (current == null) {
+      _leaving = true;
+      Navigator.of(context).pop();
+      return;
+    }
+    _titleController.text = current.title;
+    _detailController.text = current.detail;
+    _tagsController.text = current.tags.join(', ');
+    setState(() {
+      _priority = current!.priority;
+      _dueDate = current.dueDate;
+    });
+  }
+
   Future<void> _pickDueDate() async {
     final today = DateTime.now();
     final picked = await showDatePicker(
@@ -164,6 +195,20 @@ class _TodoEditorPageState extends State<TodoEditorPage>
             onPressed: () => unawaited(_leaveFromPageBack()),
           ),
           title: Text(widget.isNew ? l10n.newTodo : l10n.editTodo),
+          actions: [
+            TodoHistoryActions(
+              workspace: widget.workspace,
+              onHistoryChanged: _handleHistoryChanged,
+            ),
+            if (!widget.isNew)
+              IconButton(
+                key: const ValueKey('todo-detail-delete-button'),
+                tooltip: l10n.deleteTodo,
+                onPressed: () => unawaited(_deleteTodo()),
+                icon: const Icon(Icons.delete_outline),
+              ),
+            const SizedBox(width: AppSpacing.small),
+          ],
         ),
         body: SafeArea(
           child: FocusScope(

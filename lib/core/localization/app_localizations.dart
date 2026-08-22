@@ -22,9 +22,10 @@ class AppLocalizations {
       isEnglish ? 'A calm place for the next thing.' : '专注记录下一件要做的事。';
   String get emptyWorkspace =>
       isEnglish ? 'Your workspace is ready.' : '工作区已准备就绪。';
-  String get emptyWorkspaceHint => isEnglish
-      ? 'Todo actions will appear here in the next layer.'
-      : 'Todo 行为将在后续应用层接入。';
+  String get emptyWorkspaceHint =>
+      isEnglish
+          ? 'Todo actions will appear here in the next layer.'
+          : 'Todo 行为将在后续应用层接入。';
   String get defaultList => isEnglish ? 'Default List' : '默认 List';
   String get activeTodos => isEnglish ? 'Active' : '未完成';
   String get completedTodos => isEnglish ? 'Completed' : '已完成';
@@ -57,6 +58,9 @@ class AppLocalizations {
   String get themeDark => isEnglish ? 'Dark' : '深色';
   String get themeSystem => isEnglish ? 'System' : '跟随系统';
   String get themeMenuLabel => isEnglish ? 'Theme' : '主题';
+  String get undo => isEnglish ? 'Undo' : 'Undo';
+  String get redo => isEnglish ? 'Redo' : 'Redo';
+  String get deleteTodo => isEnglish ? 'Delete Todo' : '删除 Todo';
 }
 
 class _AppLocalizationsDelegate

@@ -132,7 +132,11 @@ class AppDatabase implements QueryExecutorUser {
 
   Future<void> insertTodo(Todo todo) async {
     await initialize();
-    await _executor.runCustom(
+    await _insertTodo(_executor, todo);
+  }
+
+  Future<void> _insertTodo(QueryExecutor executor, Todo todo) async {
+    await executor.runCustom(
       '''
         INSERT INTO todos (
           id, list_id, title, detail, priority, due_date, tags,
@@ -168,23 +172,190 @@ class AppDatabase implements QueryExecutorUser {
 
   Future<void> updateTodo(Todo todo) async {
     await initialize();
-    await _executor.runCustom(
+    await _replaceTodo(_executor, todo);
+  }
+
+  Future<void> deleteTodo(String id) async {
+    await initialize();
+    await _executor.runCustom('DELETE FROM todos WHERE id = ?', [id]);
+  }
+
+  Future<TodoCommandHistory> loadHistory() async {
+    await initialize();
+    final rows = await _executor.runSelect('''
+        SELECT direction, payload
+        FROM undo_records
+        ORDER BY created_at ASC, id ASC
+      ''', const []);
+    final undo = <TodoCommand>[];
+    final redo = <TodoCommand>[];
+    for (final row in rows) {
+      final command = TodoCommand.fromJson(row['payload']! as String);
+      if (row['direction'] == 'undo') {
+        undo.add(command);
+      } else if (row['direction'] == 'redo') {
+        redo.add(command);
+      }
+    }
+    return TodoCommandHistory(
+      undo: List.unmodifiable(undo),
+      redo: List.unmodifiable(redo),
+    );
+  }
+
+  Future<void> applyBusinessCommand(TodoCommand command) async {
+    await _transaction<void>((executor) async {
+      await _applyCommand(executor, command, forward: true);
+      await executor.runCustom(
+        "DELETE FROM undo_records WHERE direction = 'redo'",
+      );
+      await executor.runCustom(
+        '''
+        INSERT INTO undo_records (id, direction, payload, created_at)
+        VALUES (?, 'undo', ?, ?)
+      ''',
+        [command.id, command.encoded, await _nextHistorySequence(executor)],
+      );
+      await _trimHistory(executor, 'undo');
+    });
+  }
+
+  Future<bool> undoCommand() async {
+    return _transaction<bool>((executor) async {
+      final command = await _loadTopCommand(executor, 'undo');
+      if (command == null) return false;
+      await _applyCommand(executor, command, forward: false);
+      await executor.runCustom(
+        '''
+          UPDATE undo_records
+          SET direction = 'redo', created_at = ?
+          WHERE id = ?
+        ''',
+        [await _nextHistorySequence(executor), command.id],
+      );
+      await _trimHistory(executor, 'redo');
+      return true;
+    });
+  }
+
+  Future<bool> redoCommand() async {
+    return _transaction<bool>((executor) async {
+      final command = await _loadTopCommand(executor, 'redo');
+      if (command == null) return false;
+      await _applyCommand(executor, command, forward: true);
+      await executor.runCustom(
+        '''
+          UPDATE undo_records
+          SET direction = 'undo', created_at = ?
+          WHERE id = ?
+        ''',
+        [await _nextHistorySequence(executor), command.id],
+      );
+      await _trimHistory(executor, 'undo');
+      return true;
+    });
+  }
+
+  Future<void> _replaceTodo(QueryExecutor executor, Todo todo) async {
+    await executor.runCustom(
       '''
         UPDATE todos
-        SET title = ?, detail = ?, priority = ?, due_date = ?, tags = ?,
-            updated_at = ?
+        SET list_id = ?, title = ?, detail = ?, priority = ?, due_date = ?,
+            tags = ?, completed = ?, created_at = ?, updated_at = ?
         WHERE id = ?
       ''',
       [
+        todo.listId,
         todo.title,
         todo.detail,
         todo.priority.value,
         _encodeDueDate(todo.dueDate),
         jsonEncode(todo.tags),
+        todo.completed ? 1 : 0,
+        todo.createdAt.microsecondsSinceEpoch,
         todo.updatedAt.microsecondsSinceEpoch,
         todo.id,
       ],
     );
+  }
+
+  Future<void> _applyCommand(
+    QueryExecutor executor,
+    TodoCommand command, {
+    required bool forward,
+  }) async {
+    final todo = forward ? command.after : command.before;
+    if (todo == null) {
+      final id = (forward ? command.before : command.after)!.id;
+      await executor.runCustom('DELETE FROM todos WHERE id = ?', [id]);
+      return;
+    }
+
+    if ((command.type == TodoCommandType.create && forward) ||
+        (command.type == TodoCommandType.delete && !forward)) {
+      await _insertTodo(executor, todo);
+    } else {
+      await _replaceTodo(executor, todo);
+    }
+  }
+
+  Future<TodoCommand?> _loadTopCommand(
+    QueryExecutor executor,
+    String direction,
+  ) async {
+    final rows = await executor.runSelect(
+      '''
+        SELECT payload
+        FROM undo_records
+        WHERE direction = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+      ''',
+      [direction],
+    );
+    if (rows.isEmpty) return null;
+    return TodoCommand.fromJson(rows.single['payload']! as String);
+  }
+
+  Future<int> _nextHistorySequence(QueryExecutor executor) async {
+    final rows = await executor.runSelect(
+      'SELECT COALESCE(MAX(created_at), 0) + 1 AS next_sequence FROM undo_records',
+      const [],
+    );
+    return (rows.single['next_sequence']! as num).toInt();
+  }
+
+  Future<void> _trimHistory(QueryExecutor executor, String direction) {
+    return executor.runCustom(
+      '''
+        DELETE FROM undo_records
+        WHERE direction = ?
+          AND id NOT IN (
+            SELECT id
+            FROM undo_records
+            WHERE direction = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 50
+          )
+      ''',
+      [direction, direction],
+    );
+  }
+
+  Future<T> _transaction<T>(
+    Future<T> Function(TransactionExecutor executor) action,
+  ) async {
+    await initialize();
+    final transaction = _executor.beginTransaction();
+    await transaction.ensureOpen(this);
+    try {
+      final result = await action(transaction);
+      await transaction.send();
+      return result;
+    } catch (_) {
+      await transaction.rollback();
+      rethrow;
+    }
   }
 
   Todo _todoFromRow(Map<String, Object?> row) {
@@ -197,9 +368,10 @@ class AppDatabase implements QueryExecutorUser {
       detail: row['detail']! as String,
       priority: todoPriorityFromValue(row['priority']! as String),
       dueDate: _decodeDueDate(row['due_date'] as String?),
-      tags: decodedTags is List
-          ? decodedTags.whereType<String>()
-          : const <String>[],
+      tags:
+          decodedTags is List
+              ? decodedTags.whereType<String>()
+              : const <String>[],
       completed: (row['completed']! as int) == 1,
       createdAt: DateTime.fromMicrosecondsSinceEpoch(row['created_at']! as int),
       updatedAt: DateTime.fromMicrosecondsSinceEpoch(row['updated_at']! as int),
