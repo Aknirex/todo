@@ -12,6 +12,13 @@ node_modules
 .DS_Store
 dist
 *.local
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
 
 # Editor directories and files
 .idea

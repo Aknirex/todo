@@ -1,0 +1,174 @@
+// !$*UTF8*$!
+{
+  archiveVersion = 1;
+  classes = {};
+  objectVersion = 54;
+  objects = {
+
+/* Begin PBXBuildFile section */
+    100000000000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000010 /* AppDelegate.swift */; };
+    100000000000000000000002 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000011 /* GeneratedPluginRegistrant.m */; };
+    100000000000000000000003 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000013 /* LaunchScreen.storyboard */; };
+    100000000000000000000004 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000015 /* AppFrameworkInfo.plist */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+    100000000000000000000010 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+    100000000000000000000011 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+    100000000000000000000018 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
+    100000000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+    100000000000000000000013 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+    100000000000000000000014 /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+    100000000000000000000015 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+    100000000000000000000016 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
+    100000000000000000000017 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+    100000000000000000000020 /* Frameworks */ = {
+      isa = PBXFrameworksBuildPhase;
+      buildActionMask = 2147483647;
+      files = ();
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+    100000000000000000000030 = {
+      isa = PBXGroup;
+      children = (
+        100000000000000000000031 /* Flutter */,
+        100000000000000000000032 /* Runner */,
+        100000000000000000000033 /* Products */,
+      );
+      sourceTree = "<group>";
+    };
+    100000000000000000000031 /* Flutter */ = {
+      isa = PBXGroup;
+      children = (
+        100000000000000000000015 /* AppFrameworkInfo.plist */,
+        100000000000000000000016 /* Debug.xcconfig */,
+        100000000000000000000017 /* Release.xcconfig */,
+      );
+      name = Flutter;
+      sourceTree = "<group>";
+    };
+    100000000000000000000032 /* Runner */ = {
+      isa = PBXGroup;
+      children = (
+        100000000000000000000010 /* AppDelegate.swift */,
+        100000000000000000000011 /* GeneratedPluginRegistrant.m */,
+        100000000000000000000018 /* GeneratedPluginRegistrant.h */,
+        100000000000000000000012 /* Info.plist */,
+        100000000000000000000013 /* LaunchScreen.storyboard */,
+      );
+      path = Runner;
+      sourceTree = "<group>";
+    };
+    100000000000000000000033 /* Products */ = {
+      isa = PBXGroup;
+      children = (100000000000000000000014 /* Runner.app */);
+      name = Products;
+      sourceTree = "<group>";
+    };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+    100000000000000000000040 /* Runner */ = {
+      isa = PBXNativeTarget;
+      buildConfigurationList = 100000000000000000000060 /* Build configuration list for PBXNativeTarget "Runner" */;
+      buildPhases = (
+        100000000000000000000070 /* Flutter build */,
+        100000000000000000000050 /* Sources */,
+        100000000000000000000020 /* Frameworks */,
+        100000000000000000000051 /* Resources */,
+        100000000000000000000071 /* Embed Flutter */,
+      );
+      buildRules = ();
+      dependencies = ();
+      name = Runner;
+      productName = Runner;
+      productReference = 100000000000000000000014 /* Runner.app */;
+      productType = "com.apple.product-type.application";
+    };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+    100000000000000000000041 /* Project object */ = {
+      isa = PBXProject;
+      attributes = { LastUpgradeCheck = 1600; ORGANIZATIONNAME = aknirex; };
+      buildConfigurationList = 100000000000000000000061 /* Build configuration list for PBXProject "Runner" */;
+      compatibilityVersion = "Xcode 14.0";
+      developmentRegion = en;
+      knownRegions = (en, Base);
+      mainGroup = 100000000000000000000030;
+      productRefGroup = 100000000000000000000033 /* Products */;
+      projectDirPath = "";
+      projectRoot = "";
+      targets = (100000000000000000000040 /* Runner */);
+    };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+    100000000000000000000051 /* Resources */ = {
+      isa = PBXResourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (
+        100000000000000000000003 /* LaunchScreen.storyboard in Resources */,
+        100000000000000000000004 /* AppFrameworkInfo.plist in Resources */,
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+    100000000000000000000070 /* Flutter build */ = {
+      isa = PBXShellScriptBuildPhase;
+      alwaysOutOfDate = 1;
+      buildActionMask = 2147483647;
+      files = ();
+      name = "Flutter build";
+      runOnlyForDeploymentPostprocessing = 0;
+      shellPath = /bin/sh;
+      shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+    };
+    100000000000000000000071 /* Embed Flutter */ = {
+      isa = PBXShellScriptBuildPhase;
+      alwaysOutOfDate = 1;
+      buildActionMask = 2147483647;
+      files = ();
+      name = "Embed Flutter";
+      runOnlyForDeploymentPostprocessing = 0;
+      shellPath = /bin/sh;
+      shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+    };
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+    100000000000000000000050 /* Sources */ = {
+      isa = PBXSourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (
+        100000000000000000000001 /* AppDelegate.swift in Sources */,
+        100000000000000000000002 /* GeneratedPluginRegistrant.m in Sources */,
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+    100000000000000000000080 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"; INFOPLIST_FILE = Runner/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.aknirex.todo; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_OBJC_BRIDGING_HEADER = ""; SWIFT_VERSION = 5.0; }; name = Debug; };
+    100000000000000000000081 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"; INFOPLIST_FILE = Runner/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.aknirex.todo; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; }; name = Release; };
+    100000000000000000000082 /* Profile */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"; INFOPLIST_FILE = Runner/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.aknirex.todo; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; }; name = Profile; };
+    100000000000000000000083 /* Project Debug */ = { isa = XCBuildConfiguration; baseConfigurationReference = 100000000000000000000016 /* Debug.xcconfig */; buildSettings = {}; name = Debug; };
+    100000000000000000000084 /* Project Release */ = { isa = XCBuildConfiguration; baseConfigurationReference = 100000000000000000000017 /* Release.xcconfig */; buildSettings = {}; name = Release; };
+    100000000000000000000085 /* Project Profile */ = { isa = XCBuildConfiguration; baseConfigurationReference = 100000000000000000000017 /* Release.xcconfig */; buildSettings = {}; name = Profile; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+    100000000000000000000060 /* Build configuration list for PBXNativeTarget "Runner" */ = { isa = XCConfigurationList; buildConfigurations = (100000000000000000000080 /* Debug */, 100000000000000000000081 /* Release */, 100000000000000000000082 /* Profile */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+    100000000000000000000061 /* Build configuration list for PBXProject "Runner" */ = { isa = XCConfigurationList; buildConfigurations = (100000000000000000000083 /* Project Debug */, 100000000000000000000084 /* Project Release */, 100000000000000000000085 /* Project Profile */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+  };
+  rootObject = 100000000000000000000041 /* Project object */;
+}
