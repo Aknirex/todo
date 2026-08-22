@@ -57,32 +57,51 @@ void main() {
     expect(workspace.canRedo, isFalse);
   });
 
-  test(
-    'a new business command clears Redo and history is capped at 50',
-    () async {
-      final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
-      await workspace.start();
+  test('a new business command clears Redo', () async {
+    final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
+    await workspace.start();
 
-      await workspace.createTodo(title: 'first');
+    await workspace.createTodo(title: 'first');
+    await workspace.undo();
+    expect(workspace.canRedo, isTrue);
+    await workspace.createTodo(title: 'second');
+    expect(workspace.canRedo, isFalse);
+
+    for (var index = 0; index < 50; index++) {
+      await workspace.createTodo(title: 'Todo $index');
+    }
+    for (var index = 0; index < 50; index++) {
       await workspace.undo();
-      expect(workspace.canRedo, isTrue);
-      await workspace.createTodo(title: 'second');
-      expect(workspace.canRedo, isFalse);
+    }
+    expect(workspace.current.todos.map((todo) => todo.title), ['second']);
+    expect(workspace.canUndo, isFalse);
+    for (var index = 0; index < 50; index++) {
+      await workspace.redo();
+    }
+    expect(workspace.canRedo, isFalse);
+  });
 
-      for (var index = 0; index < 50; index++) {
-        await workspace.createTodo(title: 'Todo $index');
-      }
-      for (var index = 0; index < 50; index++) {
-        await workspace.undo();
-      }
-      expect(workspace.current.todos.map((todo) => todo.title), ['second']);
-      expect(workspace.canUndo, isFalse);
-      for (var index = 0; index < 50; index++) {
-        await workspace.redo();
-      }
-      expect(workspace.canRedo, isFalse);
-    },
-  );
+  test('Undo and Redo each retain at most 50 commands', () async {
+    final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
+    await workspace.start();
+
+    for (var index = 0; index < 51; index++) {
+      await workspace.createTodo(title: 'Todo $index');
+    }
+    for (var index = 0; index < 50; index++) {
+      await workspace.undo();
+    }
+
+    expect(workspace.current.todos.map((todo) => todo.title), ['Todo 0']);
+    expect(workspace.canUndo, isFalse);
+    expect(workspace.canRedo, isTrue);
+
+    for (var index = 0; index < 50; index++) {
+      await workspace.redo();
+    }
+    expect(workspace.current.todos, hasLength(51));
+    expect(workspace.canRedo, isFalse);
+  });
 
   test('Drift persists commands and stack direction across restart', () async {
     final directory = await Directory.systemTemp.createTemp('aknirex-todo-');
@@ -125,6 +144,84 @@ void main() {
     expect((await second.loadTodos()).single.title, 'Persist me');
     expect(await second.redoCommand(), isTrue);
     expect(await second.loadTodos(), isEmpty);
+  });
+
+  test(
+    'Drift orders history by execution sequence, including delete',
+    () async {
+      final database = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(database.close);
+      final first = Todo.create(
+        id: 'first',
+        listId: 'default',
+        title: 'First',
+        createdAt: DateTime(2026, 12, 1),
+        updatedAt: DateTime(2026, 12, 1),
+      );
+      final second = Todo.create(
+        id: 'second',
+        listId: 'default',
+        title: 'Second',
+        createdAt: DateTime(2020, 1, 1),
+        updatedAt: DateTime(2020, 1, 1),
+      );
+
+      await database.applyBusinessCommand(TodoCommand.create(first));
+      await database.applyBusinessCommand(TodoCommand.delete(first));
+      await database.applyBusinessCommand(TodoCommand.create(second));
+
+      expect(await database.undoCommand(), isTrue);
+      expect(await database.loadTodos(), isEmpty);
+      expect(await database.undoCommand(), isTrue);
+      expect((await database.loadTodos()).single.id, 'first');
+    },
+  );
+
+  test('Drift rolls back Todo and history when a command fails', () async {
+    final database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+    final before = Todo.create(
+      id: 'rollback',
+      listId: 'default',
+      title: 'Before',
+    );
+    final after = before.copyWith(title: 'After');
+    final command = TodoCommand(
+      id: 'rollback-command',
+      type: TodoCommandType.update,
+      before: before,
+      after: after,
+      createdAt: after.updatedAt,
+    );
+    await database.insertTodo(before);
+    await database.applyBusinessCommand(command);
+
+    final failing = TodoCommand(
+      id: command.id,
+      type: TodoCommandType.update,
+      before: after,
+      after: after.copyWith(title: 'Failed'),
+      createdAt: DateTime.now(),
+    );
+    await expectLater(
+      database.applyBusinessCommand(failing),
+      throwsA(anything),
+    );
+
+    expect((await database.loadTodos()).single.title, 'After');
+    final history = await database.loadHistory();
+    expect(history.undo, hasLength(1));
+    expect(history.undo.single.id, command.id);
   });
 
   testWidgets('home exposes disabled history and direct deletion', (
@@ -182,10 +279,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Before detail'), findsOneWidget);
 
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(workspace.current.todos.single.title, 'Before detail');
+
+    await tester.tap(find.text('Before detail'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const ValueKey('redo-button')));
     await tester.pumpAndSettle();
     expect(find.text('After detail'), findsOneWidget);
 
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(workspace.current.todos.single.title, 'After detail');
+
+    await tester.tap(find.text('After detail'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('todo-detail-delete-button')));
     await tester.pumpAndSettle();
     expect(workspace.current.todos, isEmpty);
