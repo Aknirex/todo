@@ -23,8 +23,8 @@ class Todo {
     this.completed = false,
     required this.createdAt,
     required this.updatedAt,
-  })  : dueDate = _dateOnly(dueDate),
-        tags = List.unmodifiable(normalizeTodoTags(tags));
+  }) : dueDate = _dateOnly(dueDate),
+       tags = List.unmodifiable(normalizeTodoTags(tags));
 
   factory Todo.create({
     required String id,

@@ -33,8 +33,10 @@ class _TodoEditorPageState extends State<TodoEditorPage>
   bool _leaving = false;
   double _lastViewInset = 0;
 
-  bool get _shouldDismissKeyboard =>
-      !_keyboardDismissed && _editorFocusScopeNode.hasFocus;
+  bool get _editorHasTextFocus =>
+      _editorFocusScopeNode.hasFocus && !_editorFocusScopeNode.hasPrimaryFocus;
+
+  bool get _shouldDismissKeyboard => !_keyboardDismissed && _editorHasTextFocus;
 
   @override
   void initState() {
@@ -68,7 +70,7 @@ class _TodoEditorPageState extends State<TodoEditorPage>
   }
 
   void _handleFocusChange() {
-    if (_editorFocusScopeNode.hasFocus && mounted) {
+    if (_editorHasTextFocus && mounted) {
       setState(() => _keyboardDismissed = false);
     }
   }
@@ -104,15 +106,6 @@ class _TodoEditorPageState extends State<TodoEditorPage>
     );
   }
 
-  Future<void> _saveExistingAndLeave({required bool routeAlreadyPopped}) async {
-    if (_leaving) return;
-    _leaving = true;
-    await widget.workspace.updateTodo(_draftTodo());
-    if (!routeAlreadyPopped && mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
   Future<void> _leaveFromPageBack() async {
     if (_leaving) return;
     _leaving = true;
@@ -144,7 +137,9 @@ class _TodoEditorPageState extends State<TodoEditorPage>
       lastDate: DateTime(2100),
     );
     if (picked != null && mounted) {
-      setState(() => _dueDate = DateTime(picked.year, picked.month, picked.day));
+      setState(
+        () => _dueDate = DateTime(picked.year, picked.month, picked.day),
+      );
     }
   }
 
@@ -152,12 +147,13 @@ class _TodoEditorPageState extends State<TodoEditorPage>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return PopScope<void>(
-      canPop: !_shouldDismissKeyboard,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
+        if (didPop) return;
+        if (_shouldDismissKeyboard) {
           _dismissKeyboard();
-        } else if (!widget.isNew) {
-          unawaited(_saveExistingAndLeave(routeAlreadyPopped: true));
+        } else {
+          unawaited(_leaveFromPageBack());
         }
       },
       child: Scaffold(
@@ -204,7 +200,7 @@ class _TodoEditorPageState extends State<TodoEditorPage>
                     const SizedBox(height: AppSpacing.medium),
                     DropdownButtonFormField<TodoPriority>(
                       key: const ValueKey('todo-priority-input'),
-                      value: _priority,
+                      initialValue: _priority,
                       decoration: InputDecoration(
                         labelText: l10n.priorityLabel,
                       ),

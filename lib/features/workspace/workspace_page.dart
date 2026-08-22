@@ -20,8 +20,9 @@ class WorkspacePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlayStyle =
-        isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
+    final overlayStyle = isDark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle.copyWith(
@@ -40,16 +41,15 @@ class WorkspacePage extends ConsumerWidget {
             ),
             IconButton(
               tooltip: l10n.languageTooltip,
-              onPressed:
-                  () => unawaited(
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .setLocale(
-                          l10n.isEnglish
-                              ? const Locale('zh', 'CN')
-                              : const Locale('en'),
-                        ),
-                  ),
+              onPressed: () => unawaited(
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .setLocale(
+                      l10n.isEnglish
+                          ? const Locale('zh', 'CN')
+                          : const Locale('en'),
+                    ),
+              ),
               icon: Text(
                 l10n.currentLanguage,
                 style: Theme.of(context).textTheme.labelLarge,
@@ -73,38 +73,37 @@ class WorkspacePage extends ConsumerWidget {
         ThemeMode.system;
     final choice = await showModalBottomSheet<ThemeMode>(
       context: context,
-      builder:
-          (context) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.page),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.themeMenuLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  _ThemeOption(
-                    label: l10n.themeSystem,
-                    value: ThemeMode.system,
-                    groupValue: selected,
-                  ),
-                  _ThemeOption(
-                    label: l10n.themeLight,
-                    value: ThemeMode.light,
-                    groupValue: selected,
-                  ),
-                  _ThemeOption(
-                    label: l10n.themeDark,
-                    value: ThemeMode.dark,
-                    groupValue: selected,
-                  ),
-                ],
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.page),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.themeMenuLabel,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
+              const SizedBox(height: AppSpacing.small),
+              _ThemeOption(
+                label: l10n.themeSystem,
+                value: ThemeMode.system,
+                groupValue: selected,
+              ),
+              _ThemeOption(
+                label: l10n.themeLight,
+                value: ThemeMode.light,
+                groupValue: selected,
+              ),
+              _ThemeOption(
+                label: l10n.themeDark,
+                value: ThemeMode.dark,
+                groupValue: selected,
+              ),
+            ],
           ),
+        ),
+      ),
     );
     if (choice != null && context.mounted) {
       await ref.read(settingsControllerProvider.notifier).setThemeMode(choice);
@@ -273,10 +272,8 @@ class _TodoRow extends StatelessWidget {
                   onTap: () => unawaited(
                     Navigator.of(context).push<void>(
                       MaterialPageRoute<void>(
-                        builder: (_) => TodoEditorPage(
-                          workspace: workspace,
-                          todo: todo,
-                        ),
+                        builder: (_) =>
+                            TodoEditorPage(workspace: workspace, todo: todo),
                       ),
                     ),
                   ),
@@ -294,8 +291,8 @@ class _TodoRow extends StatelessWidget {
                                   )
                                 : null,
                           ),
-                    ),
                   ),
+                ),
               ),
             ],
           ),

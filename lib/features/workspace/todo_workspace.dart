@@ -69,20 +69,19 @@ class MemoryTodoWorkspaceStore implements TodoWorkspaceStore {
 
   @override
   Future<WorkspaceSnapshot> load() async {
-    final sortedTodos =
-        todos.toList()..sort((a, b) {
-          final completedOrder =
-              a.completed == b.completed
-                  ? 0
-                  : a.completed
-                  ? 1
-                  : -1;
-          return completedOrder != 0
-              ? completedOrder
-              : b.createdAt.compareTo(a.createdAt) != 0
-              ? b.createdAt.compareTo(a.createdAt)
-              : b.id.compareTo(a.id);
-        });
+    final sortedTodos = todos.toList()
+      ..sort((a, b) {
+        final completedOrder = a.completed == b.completed
+            ? 0
+            : a.completed
+            ? 1
+            : -1;
+        return completedOrder != 0
+            ? completedOrder
+            : b.createdAt.compareTo(a.createdAt) != 0
+            ? b.createdAt.compareTo(a.createdAt)
+            : b.id.compareTo(a.id);
+      });
     return WorkspaceSnapshot(
       lists: List.unmodifiable(lists),
       todos: List.unmodifiable(sortedTodos),
