@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:aknirex_todo/app.dart';
+import 'package:aknirex_todo/core/backup/backup_service.dart';
+import 'package:aknirex_todo/core/storage/app_database.dart';
 import 'package:aknirex_todo/core/settings/settings_controller.dart';
 import 'package:aknirex_todo/features/workspace/todo_workspace.dart';
 import 'package:aknirex_todo/providers.dart';
@@ -94,4 +96,50 @@ void main() {
       expect(find.byType(Checkbox), findsOneWidget);
     },
   );
+
+  testWidgets('settings page persists language, theme, and local export', (
+    tester,
+  ) async {
+    final settings = MemorySettingsStore(
+      const AppSettings(locale: Locale('zh', 'CN')),
+    );
+    final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
+    await workspace.start();
+    final database = AppDatabase.inMemory();
+    await database.initialize();
+    addTearDown(database.close);
+    final backupService = BackupService(
+      database: database,
+      settingsStore: settings,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          settingsStoreProvider.overrideWithValue(settings),
+          todoWorkspaceProvider.overrideWith((ref) async => workspace),
+          backupServiceProvider.overrideWith((ref) async => backupService),
+        ],
+        child: const TodoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('设置'), findsOneWidget);
+    expect(find.text('简体中文'), findsOneWidget);
+    expect(find.text('深色'), findsOneWidget);
+
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    expect(settings.value.locale, const Locale('en'));
+    expect(settings.value.themeMode, ThemeMode.dark);
+    expect(find.text('Settings'), findsOneWidget);
+
+    expect(find.byKey(const ValueKey('backup-export-button')), findsOneWidget);
+    expect(find.byKey(const ValueKey('backup-import-button')), findsOneWidget);
+  });
 }

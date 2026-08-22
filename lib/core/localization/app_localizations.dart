@@ -86,6 +86,27 @@ class AppLocalizations {
   String get undo => isEnglish ? 'Undo' : 'Undo';
   String get redo => isEnglish ? 'Redo' : 'Redo';
   String get deleteTodo => isEnglish ? 'Delete Todo' : '删除 Todo';
+  String get settingsTooltip => isEnglish ? 'Settings' : '设置';
+  String get settingsTitle => isEnglish ? 'Settings' : '设置';
+  String get languageLabel => isEnglish ? 'Language' : '语言';
+  String get languageEnglish => 'English';
+  String get languageChinese => '简体中文';
+  String get backupLabel => isEnglish ? 'JSON backup' : 'JSON 备份';
+  String get exportBackup => isEnglish ? 'Copy JSON backup' : '复制 JSON 备份';
+  String get importBackup => isEnglish ? 'Import JSON backup' : '导入 JSON 备份';
+  String get backupCopied =>
+      isEnglish ? 'JSON backup copied to the clipboard.' : 'JSON 备份已复制到剪贴板。';
+  String get backupExportFailed =>
+      isEnglish ? 'The backup could not be exported.' : '备份无法导出。';
+  String get noBackupToImport =>
+      isEnglish
+          ? 'There is no JSON backup in the clipboard.'
+          : '剪贴板中没有 JSON 备份。';
+  String get importSucceeded =>
+      isEnglish ? 'Backup imported successfully.' : '备份导入成功。';
+  String get importConflicts => isEnglish ? 'Conflicts' : '冲突';
+  String get backupImportFailed =>
+      isEnglish ? 'The backup could not be imported.' : '备份无法导入。';
 }
 
 class _AppLocalizationsDelegate

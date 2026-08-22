@@ -13,11 +13,13 @@ class WorkspaceList {
     required this.id,
     required this.name,
     required this.isDefault,
+    this.createdAt,
   });
 
   final String id;
   final String name;
   final bool isDefault;
+  final DateTime? createdAt;
 }
 
 class AppDatabase implements QueryExecutorUser {
@@ -85,7 +87,7 @@ class AppDatabase implements QueryExecutorUser {
     ''');
     await _executor.runCustom('''
       INSERT INTO lists (id, name, is_default, created_at)
-      SELECT 'default', 'Default List', 1, strftime('%s', 'now') * 1000
+      SELECT 'default', 'Default List', 1, strftime('%s', 'now') * 1000000
       WHERE NOT EXISTS (SELECT 1 FROM lists WHERE is_default = 1)
     ''');
     _initialized = true;
@@ -94,7 +96,8 @@ class AppDatabase implements QueryExecutorUser {
   Future<List<WorkspaceList>> loadLists() async {
     await initialize();
     final rows = await _executor.runSelect(
-      'SELECT id, name, is_default FROM lists ORDER BY is_default DESC, created_at',
+      'SELECT id, name, is_default, created_at FROM lists '
+      'ORDER BY is_default DESC, created_at',
       const [],
     );
     return rows
@@ -103,6 +106,9 @@ class AppDatabase implements QueryExecutorUser {
             id: row['id']! as String,
             name: row['name']! as String,
             isDefault: (row['is_default']! as int) == 1,
+            createdAt: DateTime.fromMicrosecondsSinceEpoch(
+              row['created_at']! as int,
+            ),
           ),
         )
         .toList(growable: false);
@@ -130,13 +136,24 @@ class AppDatabase implements QueryExecutorUser {
     return rows.map(_todoFromRow).toList(growable: false);
   }
 
-  Future<void> insertTodo(Todo todo) async {
+  Future<void> insertList(WorkspaceList list, {QueryExecutor? executor}) async {
     await initialize();
-    await _insertTodo(_executor, todo);
+    final target = executor ?? _executor;
+    await target.runCustom(
+      'INSERT INTO lists (id, name, is_default, created_at) VALUES (?, ?, ?, ?)',
+      [
+        list.id,
+        list.name,
+        list.isDefault ? 1 : 0,
+        (list.createdAt ?? DateTime.now()).microsecondsSinceEpoch,
+      ],
+    );
   }
 
-  Future<void> _insertTodo(QueryExecutor executor, Todo todo) async {
-    await executor.runCustom(
+  Future<void> insertTodo(Todo todo, {QueryExecutor? executor}) async {
+    await initialize();
+    final target = executor ?? _executor;
+    await target.runCustom(
       '''
         INSERT INTO todos (
           id, list_id, title, detail, priority, due_date, tags,
@@ -293,7 +310,7 @@ class AppDatabase implements QueryExecutorUser {
 
     if ((command.type == TodoCommandType.create && forward) ||
         (command.type == TodoCommandType.delete && !forward)) {
-      await _insertTodo(executor, todo);
+      await insertTodo(todo, executor: executor);
     } else {
       await _replaceTodo(executor, todo);
     }
@@ -389,6 +406,34 @@ class AppDatabase implements QueryExecutorUser {
     if (value == null || value.isEmpty) return null;
     final parts = value.split('-').map(int.parse).toList(growable: false);
     return DateTime(parts[0], parts[1], parts[2]);
+  }
+
+  Future<void> clearUndoHistory({QueryExecutor? executor}) async {
+    await initialize();
+    await (executor ?? _executor).runCustom('DELETE FROM undo_records');
+  }
+
+  Future<int> undoRecordCount() async {
+    await initialize();
+    final rows = await _executor.runSelect(
+      'SELECT COUNT(*) AS count FROM undo_records',
+      const [],
+    );
+    return rows.single['count']! as int;
+  }
+
+  Future<T> transaction<T>(Future<T> Function(QueryExecutor) action) async {
+    await initialize();
+    final transaction = _executor.beginTransaction();
+    try {
+      await transaction.ensureOpen(this);
+      final result = await action(transaction);
+      await transaction.send();
+      return result;
+    } catch (_) {
+      await transaction.rollback();
+      rethrow;
+    }
   }
 
   Future<void> close() => _executor.close();

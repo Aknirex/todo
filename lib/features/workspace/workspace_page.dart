@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design_system/design_tokens.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../providers.dart';
+import '../settings/settings_page.dart';
 import 'todo.dart';
 import 'todo_editor_page.dart';
 import 'todo_history_actions.dart';
@@ -58,6 +59,18 @@ class WorkspacePage extends ConsumerWidget {
               ),
             ),
             TodoHistoryActions(workspace: workspace),
+            IconButton(
+              tooltip: l10n.settingsTooltip,
+              icon: const Icon(Icons.settings_outlined),
+              onPressed:
+                  () => unawaited(
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsPage(),
+                      ),
+                    ),
+              ),
+            ),
             const SizedBox(width: AppSpacing.small),
           ],
         ),
