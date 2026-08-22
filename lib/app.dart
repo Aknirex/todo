@@ -14,7 +14,8 @@ class TodoApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsControllerProvider).valueOrNull ??
+    final settings =
+        ref.watch(settingsControllerProvider).valueOrNull ??
         const AppSettings();
 
     return MaterialApp(
@@ -80,10 +81,7 @@ class StartupErrorView extends StatelessWidget {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.page),
-            child: Text(
-              l10n.workspaceUnavailable,
-              textAlign: TextAlign.center,
-            ),
+            child: Text(l10n.workspaceUnavailable, textAlign: TextAlign.center),
           ),
         ),
       ),

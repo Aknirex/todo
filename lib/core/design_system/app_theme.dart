@@ -61,9 +61,9 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.medium),
         ),
-        minimumSize: const Size(
-          AppDimensions.minimumTouchTarget,
-          AppDimensions.minimumTouchTarget,
+        sizeConstraints: const BoxConstraints(
+          minWidth: AppDimensions.minimumTouchTarget,
+          minHeight: AppDimensions.minimumTouchTarget,
         ),
       ),
       iconButtonTheme: const IconButtonThemeData(

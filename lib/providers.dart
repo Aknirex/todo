@@ -6,8 +6,10 @@ import 'core/settings/settings_controller.dart';
 import 'core/storage/app_database.dart';
 import 'features/workspace/todo_workspace.dart';
 
-final settingsControllerProvider = AsyncNotifierProvider<SettingsController,
-    AppSettings>(SettingsController.new);
+final settingsControllerProvider =
+    AsyncNotifierProvider<SettingsController, AppSettings>(
+      SettingsController.new,
+    );
 
 final databaseProvider = FutureProvider<AppDatabase>((ref) async {
   final database = await AppDatabase.open();

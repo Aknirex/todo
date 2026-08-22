@@ -9,10 +9,7 @@ final settingsStoreProvider = Provider<SettingsStore>(
 enum PersistedThemeMode { system, light, dark }
 
 class AppSettings {
-  const AppSettings({
-    this.themeMode = ThemeMode.system,
-    this.locale,
-  });
+  const AppSettings({this.themeMode = ThemeMode.system, this.locale});
 
   final ThemeMode themeMode;
   final Locale? locale;

@@ -20,11 +20,20 @@ class WorkspaceList {
   final bool isDefault;
 }
 
-class AppDatabase {
+class AppDatabase implements QueryExecutorUser {
   AppDatabase(this._executor);
 
   final QueryExecutor _executor;
   bool _initialized = false;
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  Future<void> beforeOpen(
+    QueryExecutor executor,
+    OpeningDetails details,
+  ) async {}
 
   static Future<AppDatabase> open() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -41,6 +50,7 @@ class AppDatabase {
   Future<void> initialize() async {
     if (_initialized) return;
 
+    await _executor.ensureOpen(this);
     await _executor.runCustom('PRAGMA foreign_keys = ON');
     await _executor.runCustom('''
       CREATE TABLE IF NOT EXISTS lists (

@@ -18,9 +18,8 @@ class AppLocalizations {
   bool get isEnglish => locale.languageCode == 'en';
 
   String get workspaceTitle => isEnglish ? 'Todo workspace' : 'Todo 工作区';
-  String get workspaceSubtitle => isEnglish
-      ? 'A calm place for the next thing.'
-      : '专注记录下一件要做的事。';
+  String get workspaceSubtitle =>
+      isEnglish ? 'A calm place for the next thing.' : '专注记录下一件要做的事。';
   String get emptyWorkspace =>
       isEnglish ? 'Your workspace is ready.' : '工作区已准备就绪。';
   String get emptyWorkspaceHint => isEnglish
@@ -53,9 +52,8 @@ class AppLocalizations {
   String get themeTooltip => isEnglish ? 'Change theme' : '切换主题';
   String get currentLanguage => isEnglish ? 'EN' : '中';
   String get loadingWorkspace => isEnglish ? 'Loading workspace' : '正在加载工作区';
-  String get workspaceUnavailable => isEnglish
-      ? 'The workspace could not be opened.'
-      : '无法打开工作区。';
+  String get workspaceUnavailable =>
+      isEnglish ? 'The workspace could not be opened.' : '无法打开工作区。';
   String get themeLight => isEnglish ? 'Light' : '浅色';
   String get themeDark => isEnglish ? 'Dark' : '深色';
   String get themeSystem => isEnglish ? 'System' : '跟随系统';
