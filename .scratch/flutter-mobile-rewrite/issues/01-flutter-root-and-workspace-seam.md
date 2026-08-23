@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] 根工程可构建并启动 Android 与 iOS Flutter App，旧 UniApp 运行目标不再作为首版入口
-- [ ] Riverpod 依赖注入、Drift/SQLite 数据库连接和 Todo 工作区应用边界可被测试替换
-- [ ] 自有 Design System 提供基础颜色、字号、间距、圆角、触控尺寸、浅色/深色主题 token
-- [ ] App 正确处理基础状态栏、安全区和系统主题模式，不遮挡工作区内容
-- [ ] 简体中文与 English 的本地化资源可切换，基础壳层没有硬编码用户文案
-- [ ] 启动流程和工作区 seam 有可重复运行的 Dart/Widget 测试
+- [x] 根工程可构建并启动 Android 与 iOS Flutter App，旧 UniApp 运行目标不再作为首版入口
+- [x] Riverpod 依赖注入、Drift/SQLite 数据库连接和 Todo 工作区应用边界可被测试替换
+- [x] 自有 Design System 提供基础颜色、字号、间距、圆角、触控尺寸、浅色/深色主题 token
+- [x] App 正确处理基础状态栏、安全区和系统主题模式，不遮挡工作区内容
+- [x] 简体中文与 English 的本地化资源可切换，基础壳层没有硬编码用户文案
+- [x] 启动流程和工作区 seam 有可重复运行的 Dart/Widget 测试

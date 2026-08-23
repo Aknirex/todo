@@ -4,14 +4,14 @@
 
 **Blocked by:** 01 — Flutter 根工程与 Todo 工作区 seam
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] 空数据库首次启动时创建且只保留一个默认 List
-- [ ] Todo 持久化包含 title、detail、priority、dueDate、tags、completed、createdAt 和 updatedAt
-- [ ] 新建 Todo 默认使用 medium Priority、未完成、无 DueDate 和空 Tag 集合
-- [ ] 首页展示未完成 Todo 和已完成 Todo 两个分段，未完成内容在前
-- [ ] 用户可以创建包含标题、详情或其他默认字段的 Todo，并在重启后看到相同数据
-- [ ] 完全空白的 Todo 仍然是正式 Todo，并在首页保留一行
-- [ ] 用户点击 Todo 的完成控件后，完成状态立即更新并在重启后保持
-- [ ] 首页默认按未完成优先、最新创建优先展示 Todo
-- [ ] Todo 工作区、Drift 持久化和首页 Widget 行为都有外部行为测试
+- [x] 空数据库首次启动时创建且只保留一个默认 List
+- [x] Todo 持久化包含 title、detail、priority、dueDate、tags、completed、createdAt 和 updatedAt
+- [x] 新建 Todo 默认使用 medium Priority、未完成、无 DueDate 和空 Tag 集合
+- [x] 首页展示未完成 Todo 和已完成 Todo 两个分段，未完成内容在前
+- [x] 用户可以创建包含标题、详情或其他默认字段的 Todo，并在重启后看到相同数据
+- [x] 完全空白的 Todo 仍然是正式 Todo，并在首页保留一行
+- [x] 用户点击 Todo 的完成控件后，完成状态立即更新并在重启后保持
+- [x] 首页默认按未完成优先、最新创建优先展示 Todo
+- [x] Todo 工作区、Drift 持久化和首页 Widget 行为都有外部行为测试
