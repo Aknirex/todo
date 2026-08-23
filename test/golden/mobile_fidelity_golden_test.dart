@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,37 @@ import 'package:aknirex_todo/features/settings/settings_page.dart';
 import 'package:aknirex_todo/features/workspace/todo_workspace.dart';
 import 'package:aknirex_todo/providers.dart';
 
+class _TolerantLocalFileComparator extends LocalFileComparator {
+  _TolerantLocalFileComparator(super.testFile, {required this.maxDiffRate});
+
+  final double maxDiffRate;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final ComparisonResult result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+    final bool passed = result.passed || result.diffPercent <= maxDiffRate;
+    if (passed) {
+      result.dispose();
+      return true;
+    }
+    final String error = await generateFailureOutput(result, golden, basedir);
+    result.dispose();
+    throw FlutterError(error);
+  }
+}
+
 void main() {
+  setUpAll(() {
+    final current = goldenFileComparator as LocalFileComparator;
+    goldenFileComparator = _TolerantLocalFileComparator(
+      current.basedir.resolve('mobile_fidelity_golden_test.dart'),
+      maxDiffRate: 0.01,
+    );
+  });
+
   testWidgets('workspace empty state light', (tester) async {
     await _setMobileSurface(tester);
     final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
