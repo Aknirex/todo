@@ -20,6 +20,10 @@ build/
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
 android/local.properties
+android/key.properties
+android/app/upload-keystore.jks
+*.jks
+*.keystore
 android/app/src/main/java/
 ios/Flutter/ephemeral/
 ios/Runner/GeneratedPluginRegistrant.*
