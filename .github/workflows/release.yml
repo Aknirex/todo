@@ -120,13 +120,13 @@ jobs:
         if: env.IOS_CERTIFICATE_BASE64 != ''
         env:
           IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-        run: flutter build ipa --release --no-enable-swift-package-manager
+        run: flutter build ipa --release
 
       - name: Build unsigned app
         if: env.IOS_CERTIFICATE_BASE64 == ''
         env:
           IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-        run: flutter build ios --release --no-codesign --no-enable-swift-package-manager
+        run: flutter build ios --release --no-codesign
 
       - name: Package unsigned app
         if: env.IOS_CERTIFICATE_BASE64 == ''
