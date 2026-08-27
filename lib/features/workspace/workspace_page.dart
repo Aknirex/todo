@@ -59,36 +59,36 @@ class WorkspacePage extends ConsumerWidget {
       context: context,
       builder:
           (context) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.page),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.themeMenuLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  _ThemeOption(
-                    label: l10n.themeSystem,
-                    value: ThemeMode.system,
-                    groupValue: selected,
-                  ),
-                  _ThemeOption(
-                    label: l10n.themeLight,
-                    value: ThemeMode.light,
-                    groupValue: selected,
-                  ),
-                  _ThemeOption(
-                    label: l10n.themeDark,
-                    value: ThemeMode.dark,
-                    groupValue: selected,
-                  ),
-                ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.page),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.themeMenuLabel,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
+              const SizedBox(height: AppSpacing.small),
+              _ThemeOption(
+                label: l10n.themeSystem,
+                value: ThemeMode.system,
+                groupValue: selected,
+              ),
+              _ThemeOption(
+                label: l10n.themeLight,
+                value: ThemeMode.light,
+                groupValue: selected,
+              ),
+              _ThemeOption(
+                label: l10n.themeDark,
+                value: ThemeMode.dark,
+                groupValue: selected,
+              ),
+            ],
           ),
+        ),
+      ),
     );
     if (choice != null && context.mounted) {
       await ref.read(settingsControllerProvider.notifier).setThemeMode(choice);
@@ -136,63 +136,63 @@ class _WorkspaceActions extends ConsumerWidget {
         listenable: workspace,
         builder:
             (context, _) => PopupMenuButton<_WorkspaceAction>(
-              key: const ValueKey('workspace-actions-menu'),
-              tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-              onSelected: (action) {
-                switch (action) {
-                  case _WorkspaceAction.theme:
-                    onTheme();
-                  case _WorkspaceAction.language:
-                    unawaited(
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .setLocale(
-                            l10n.isEnglish
-                                ? const Locale('zh', 'CN')
-                                : const Locale('en'),
-                          ),
-                    );
-                  case _WorkspaceAction.undo:
-                    unawaited(workspace.undo());
-                  case _WorkspaceAction.redo:
-                    unawaited(workspace.redo());
-                  case _WorkspaceAction.settings:
-                    unawaited(
-                      Navigator.of(context).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SettingsPage(),
-                        ),
+          key: const ValueKey('workspace-actions-menu'),
+          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+          onSelected: (action) {
+            switch (action) {
+              case _WorkspaceAction.theme:
+                onTheme();
+              case _WorkspaceAction.language:
+                unawaited(
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .setLocale(
+                        l10n.isEnglish
+                            ? const Locale('zh', 'CN')
+                            : const Locale('en'),
                       ),
-                    );
-                }
-              },
+                );
+              case _WorkspaceAction.undo:
+                unawaited(workspace.undo());
+              case _WorkspaceAction.redo:
+                unawaited(workspace.redo());
+              case _WorkspaceAction.settings:
+                unawaited(
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SettingsPage(),
+                    ),
+                  ),
+                );
+            }
+          },
               itemBuilder:
                   (context) => [
-                    PopupMenuItem(
-                      value: _WorkspaceAction.theme,
-                      child: Text(l10n.themeMenuLabel),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.language,
-                      child: Text(l10n.languageTooltip),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.undo,
-                      enabled: workspace.canUndo,
-                      child: Text(l10n.undo),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.redo,
-                      enabled: workspace.canRedo,
-                      child: Text(l10n.redo),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.settings,
-                      child: Text(l10n.settingsTitle),
-                    ),
-                  ],
-              icon: const Icon(Icons.more_vert),
+            PopupMenuItem(
+              value: _WorkspaceAction.theme,
+              child: Text(l10n.themeMenuLabel),
             ),
+            PopupMenuItem(
+              value: _WorkspaceAction.language,
+              child: Text(l10n.languageTooltip),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.undo,
+              enabled: workspace.canUndo,
+              child: Text(l10n.undo),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.redo,
+              enabled: workspace.canRedo,
+              child: Text(l10n.redo),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.settings,
+              child: Text(l10n.settingsTitle),
+            ),
+          ],
+          icon: const Icon(Icons.more_vert),
+        ),
       );
     }
 
@@ -208,14 +208,14 @@ class _WorkspaceActions extends ConsumerWidget {
           tooltip: l10n.languageTooltip,
           onPressed:
               () => unawaited(
-                ref
-                    .read(settingsControllerProvider.notifier)
-                    .setLocale(
-                      l10n.isEnglish
-                          ? const Locale('zh', 'CN')
-                          : const Locale('en'),
-                    ),
-              ),
+            ref
+                .read(settingsControllerProvider.notifier)
+                .setLocale(
+                  l10n.isEnglish
+                      ? const Locale('zh', 'CN')
+                      : const Locale('en'),
+                ),
+          ),
           icon: Text(
             l10n.currentLanguage,
             style: Theme.of(context).textTheme.labelLarge,
@@ -227,10 +227,10 @@ class _WorkspaceActions extends ConsumerWidget {
           icon: const Icon(Icons.settings_outlined),
           onPressed:
               () => unawaited(
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
-                ),
-              ),
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+            ),
+          ),
         ),
         const SizedBox(width: AppSpacing.small),
       ],
@@ -327,20 +327,20 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
           backgroundColor: Colors.transparent,
           floatingActionButton:
               workspace.current.lists.isEmpty
-                  ? null
-                  : FloatingActionButton(
-                    tooltip: l10n.createTodo,
+              ? null
+              : FloatingActionButton(
+                  tooltip: l10n.createTodo,
                     onPressed:
                         () => unawaited(
-                          Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
                               builder:
                                   (_) => TodoEditorPage(workspace: workspace),
-                            ),
-                          ),
-                        ),
-                    child: const Icon(Icons.add),
+                      ),
+                    ),
                   ),
+                  child: const Icon(Icons.add),
+                ),
           body: Center(
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -391,19 +391,19 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                               prefixIcon: const Icon(Icons.search),
                               suffixIcon:
                                   _searchController.text.isEmpty
-                                      ? null
-                                      : IconButton(
+                                  ? null
+                                  : IconButton(
                                         tooltip:
                                             MaterialLocalizations.of(
-                                              context,
-                                            ).deleteButtonTooltip,
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearchChanged('');
-                                          setState(() {});
-                                        },
-                                        icon: const Icon(Icons.clear),
-                                      ),
+                                        context,
+                                      ).deleteButtonTooltip,
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _onSearchChanged('');
+                                        setState(() {});
+                                      },
+                                      icon: const Icon(Icons.clear),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.small),
@@ -417,14 +417,14 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                             onTagSelected: _toggleTag,
                             onCompletedSelected:
                                 (completed) => _setQuery(
-                                  completed == null
-                                      ? _query.copyWith(clearCompleted: true)
-                                      : _query.copyWith(completed: completed),
-                                ),
+                              completed == null
+                                  ? _query.copyWith(clearCompleted: true)
+                                  : _query.copyWith(completed: completed),
+                            ),
                             onDueDateSelected: _toggleDueDate,
                             onSortSelected:
                                 (sort) =>
-                                    _setQuery(_query.copyWith(sort: sort)),
+                                _setQuery(_query.copyWith(sort: sort)),
                           ),
                           const SizedBox(height: AppSpacing.section),
                           if (result.matches.isEmpty &&
@@ -507,62 +507,29 @@ class _QueryControls extends StatelessWidget {
                 onSelected: (choice) => onCompletedSelected(choice.value),
                 itemBuilder:
                     (context) => [
-                      CheckedPopupMenuItem(
-                        value: _CompletionChoice.all,
-                        checked: query.completed == null,
-                        child: Text(l10n.allFilter),
-                      ),
-                      CheckedPopupMenuItem(
-                        value: _CompletionChoice.active,
-                        checked: query.completed == false,
-                        child: Text(l10n.activeFilter),
-                      ),
-                      CheckedPopupMenuItem(
-                        value: _CompletionChoice.completed,
-                        checked: query.completed == true,
-                        child: Text(l10n.completedFilter),
-                      ),
-                    ],
+                  CheckedPopupMenuItem(
+                    value: _CompletionChoice.all,
+                    checked: query.completed == null,
+                    child: Text(l10n.allFilter),
+                  ),
+                  CheckedPopupMenuItem(
+                    value: _CompletionChoice.active,
+                    checked: query.completed == false,
+                    child: Text(l10n.activeFilter),
+                  ),
+                  CheckedPopupMenuItem(
+                    value: _CompletionChoice.completed,
+                    checked: query.completed == true,
+                    child: Text(l10n.completedFilter),
+                  ),
+                ],
                 child: _FilterButtonLabel(
                   label: _statusLabel(l10n, query.completed),
                 ),
               ),
               _DueDateMenu(query: query, onSelected: onDueDateSelected),
+              _SortMenu(query: query, onSelected: onSortSelected),
             ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.small),
-        KeyedSubtree(
-          key: ValueKey('todo-sort-value-${query.sort.name}'),
-          child: DropdownButtonFormField<TodoSort>(
-            key: const ValueKey('todo-sort-filter'),
-            initialValue: query.sort,
-            decoration: InputDecoration(labelText: l10n.sortLabel),
-            items: [
-              DropdownMenuItem(
-                value: TodoSort.activeNewest,
-                child: Text(l10n.sortActiveNewest),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.priority,
-                child: Text(l10n.sortPriority),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.dueDate,
-                child: Text(l10n.sortDueDate),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.titleAscending,
-                child: Text(l10n.sortTitleAscending),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.titleDescending,
-                child: Text(l10n.sortTitleDescending),
-              ),
-            ],
-            onChanged: (sort) {
-              if (sort != null) onSortSelected(sort);
-            },
           ),
         ),
       ],
@@ -573,6 +540,41 @@ class _QueryControls extends StatelessWidget {
     if (completed == true) return l10n.completedFilter;
     if (completed == false) return l10n.activeFilter;
     return l10n.filterStatus;
+  }
+}
+
+class _SortMenu extends StatelessWidget {
+  const _SortMenu({required this.query, required this.onSelected});
+
+  final TodoQuery query;
+  final ValueChanged<TodoSort> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final labels = {
+      TodoSort.activeNewest: l10n.sortActiveNewest,
+      TodoSort.priority: l10n.sortPriority,
+      TodoSort.dueDate: l10n.sortDueDate,
+      TodoSort.titleAscending: l10n.sortTitleAscending,
+      TodoSort.titleDescending: l10n.sortTitleDescending,
+    };
+    return PopupMenuButton<TodoSort>(
+      key: const ValueKey('todo-sort-filter'),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, AppSpacing.xSmall),
+      onSelected: onSelected,
+      itemBuilder: (context) => TodoSort.values
+          .map(
+            (sort) => CheckedPopupMenuItem(
+              value: sort,
+              checked: query.sort == sort,
+              child: Text(labels[sort]!),
+            ),
+          )
+          .toList(growable: false),
+      child: _FilterButtonLabel(label: l10n.sortLabel),
+    );
   }
 }
 
@@ -600,14 +602,14 @@ class _PriorityMenu extends StatelessWidget {
       onSelected: onSelected,
       itemBuilder:
           (context) => TodoPriority.values
-              .map(
-                (priority) => CheckedPopupMenuItem(
-                  value: priority,
-                  checked: query.priorities.contains(priority),
-                  child: Text(_priorityLabel(l10n, priority)),
-                ),
-              )
-              .toList(growable: false),
+          .map(
+            (priority) => CheckedPopupMenuItem(
+              value: priority,
+              checked: query.priorities.contains(priority),
+              child: Text(_priorityLabel(l10n, priority)),
+            ),
+          )
+          .toList(growable: false),
       child: _FilterButtonLabel(label: l10n.filterPriority),
     );
   }
@@ -670,14 +672,14 @@ class _DueDateMenu extends StatelessWidget {
       onSelected: onSelected,
       itemBuilder:
           (context) => TodoDueDateFilter.values
-              .map(
-                (filter) => CheckedPopupMenuItem(
-                  value: filter,
-                  checked: query.dueDateFilters.contains(filter),
-                  child: Text(labels[filter]!),
-                ),
-              )
-              .toList(growable: false),
+          .map(
+            (filter) => CheckedPopupMenuItem(
+              value: filter,
+              checked: query.dueDateFilters.contains(filter),
+              child: Text(labels[filter]!),
+            ),
+          )
+          .toList(growable: false),
       child: _FilterButtonLabel(label: l10n.filterDueDate),
     );
   }
@@ -830,16 +832,16 @@ class _TodoRow extends StatelessWidget {
                 child: InkWell(
                   onTap:
                       () => unawaited(
-                        Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
                             builder:
                                 (_) => TodoEditorPage(
                                   workspace: workspace,
                                   todo: todo,
                                 ),
-                          ),
-                        ),
                       ),
+                    ),
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
                       minHeight: AppDimensions.minimumTouchTarget,
@@ -895,8 +897,8 @@ class _HighlightedTitle extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style:
             match.todo.completed
-                ? const TextStyle(decoration: TextDecoration.lineThrough)
-                : null,
+            ? const TextStyle(decoration: TextDecoration.lineThrough)
+            : null,
       );
     }
 
