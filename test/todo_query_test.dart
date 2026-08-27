@@ -115,6 +115,47 @@ void main() {
       ['medium', 'low', 'high'],
     );
   });
+
+  test('uses untitled detail summaries for title sorting', () {
+    final todos = [
+      _todo('detail-z', detail: 'Zebra notes'),
+      _todo('title-a', title: 'Alpha'),
+      _todo('detail-b', detail: 'Bravo notes'),
+    ];
+
+    expect(
+      TodoQueryEngine.apply(
+        todos,
+        const TodoQuery(sort: TodoSort.titleAscending),
+        now: now,
+      ).todos.map((todo) => todo.id),
+      ['title-a', 'detail-b', 'detail-z'],
+    );
+    expect(
+      TodoQueryEngine.apply(
+        todos,
+        const TodoQuery(sort: TodoSort.titleDescending),
+        now: now,
+      ).todos.map((todo) => todo.id),
+      ['detail-z', 'detail-b', 'title-a'],
+    );
+  });
+
+  test('builds stable Todo display text for blank and detailed Todos', () {
+    final title = _todo('title', title: 'A titled Todo');
+    final detail = _todo(
+      'detail',
+      detail: '12345678901234567890123456789012345678901234567890extra',
+    );
+    final blank = _todo('blank');
+
+    expect(title.displayText, 'A titled Todo');
+    expect(
+      detail.displayText,
+      '12345678901234567890123456789012345678901234567890…',
+    );
+    expect(blank.displayText, isNotEmpty);
+  });
 }
 
 Todo _todo(

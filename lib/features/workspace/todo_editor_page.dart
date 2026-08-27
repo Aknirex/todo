@@ -347,5 +347,5 @@ class _TodoEditorPageState extends State<TodoEditorPage>
 }
 
 List<String> parseTodoTags(String input) {
-  return normalizeTodoTags(input.split(','));
+  return normalizeTodoTags(input.split(RegExp('[,，]')));
 }

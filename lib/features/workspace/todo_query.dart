@@ -196,8 +196,8 @@ class TodoQueryEngine {
     Todo second, {
     required bool descending,
   }) {
-    final firstTitle = first.title.trim().toLowerCase();
-    final secondTitle = second.title.trim().toLowerCase();
+    final firstTitle = first.displayText.trim().toLowerCase();
+    final secondTitle = second.displayText.trim().toLowerCase();
     var result = firstTitle.compareTo(secondTitle);
     if (descending) result = -result;
     if (result != 0) return result;

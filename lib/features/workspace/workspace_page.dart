@@ -23,8 +23,9 @@ class WorkspacePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlayStyle =
-        isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
+    final overlayStyle = isDark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle.copyWith(
@@ -57,38 +58,37 @@ class WorkspacePage extends ConsumerWidget {
         ThemeMode.system;
     final choice = await showModalBottomSheet<ThemeMode>(
       context: context,
-      builder:
-          (context) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.page),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.themeMenuLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  _ThemeOption(
-                    label: l10n.themeSystem,
-                    value: ThemeMode.system,
-                    groupValue: selected,
-                  ),
-                  _ThemeOption(
-                    label: l10n.themeLight,
-                    value: ThemeMode.light,
-                    groupValue: selected,
-                  ),
-                  _ThemeOption(
-                    label: l10n.themeDark,
-                    value: ThemeMode.dark,
-                    groupValue: selected,
-                  ),
-                ],
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.page),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.themeMenuLabel,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
+              const SizedBox(height: AppSpacing.small),
+              _ThemeOption(
+                label: l10n.themeSystem,
+                value: ThemeMode.system,
+                groupValue: selected,
+              ),
+              _ThemeOption(
+                label: l10n.themeLight,
+                value: ThemeMode.light,
+                groupValue: selected,
+              ),
+              _ThemeOption(
+                label: l10n.themeDark,
+                value: ThemeMode.dark,
+                groupValue: selected,
+              ),
+            ],
           ),
+        ),
+      ),
     );
     if (choice != null && context.mounted) {
       await ref.read(settingsControllerProvider.notifier).setThemeMode(choice);
@@ -134,65 +134,63 @@ class _WorkspaceActions extends ConsumerWidget {
     if (MediaQuery.sizeOf(context).width < 600) {
       return ListenableBuilder(
         listenable: workspace,
-        builder:
-            (context, _) => PopupMenuButton<_WorkspaceAction>(
-              key: const ValueKey('workspace-actions-menu'),
-              tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-              onSelected: (action) {
-                switch (action) {
-                  case _WorkspaceAction.theme:
-                    onTheme();
-                  case _WorkspaceAction.language:
-                    unawaited(
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .setLocale(
-                            l10n.isEnglish
-                                ? const Locale('zh', 'CN')
-                                : const Locale('en'),
-                          ),
-                    );
-                  case _WorkspaceAction.undo:
-                    unawaited(workspace.undo());
-                  case _WorkspaceAction.redo:
-                    unawaited(workspace.redo());
-                  case _WorkspaceAction.settings:
-                    unawaited(
-                      Navigator.of(context).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SettingsPage(),
-                        ),
+        builder: (context, _) => PopupMenuButton<_WorkspaceAction>(
+          key: const ValueKey('workspace-actions-menu'),
+          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+          onSelected: (action) {
+            switch (action) {
+              case _WorkspaceAction.theme:
+                onTheme();
+              case _WorkspaceAction.language:
+                unawaited(
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .setLocale(
+                        l10n.isEnglish
+                            ? const Locale('zh', 'CN')
+                            : const Locale('en'),
                       ),
-                    );
-                }
-              },
-              itemBuilder:
-                  (context) => [
-                    PopupMenuItem(
-                      value: _WorkspaceAction.theme,
-                      child: Text(l10n.themeMenuLabel),
+                );
+              case _WorkspaceAction.undo:
+                unawaited(workspace.undo());
+              case _WorkspaceAction.redo:
+                unawaited(workspace.redo());
+              case _WorkspaceAction.settings:
+                unawaited(
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SettingsPage(),
                     ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.language,
-                      child: Text(l10n.languageTooltip),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.undo,
-                      enabled: workspace.canUndo,
-                      child: Text(l10n.undo),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.redo,
-                      enabled: workspace.canRedo,
-                      child: Text(l10n.redo),
-                    ),
-                    PopupMenuItem(
-                      value: _WorkspaceAction.settings,
-                      child: Text(l10n.settingsTitle),
-                    ),
-                  ],
-              icon: const Icon(Icons.more_vert),
+                  ),
+                );
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: _WorkspaceAction.theme,
+              child: Text(l10n.themeMenuLabel),
             ),
+            PopupMenuItem(
+              value: _WorkspaceAction.language,
+              child: Text(l10n.languageTooltip),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.undo,
+              enabled: workspace.canUndo,
+              child: Text(l10n.undo),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.redo,
+              enabled: workspace.canRedo,
+              child: Text(l10n.redo),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.settings,
+              child: Text(l10n.settingsTitle),
+            ),
+          ],
+          icon: const Icon(Icons.more_vert),
+        ),
       );
     }
 
@@ -206,16 +204,15 @@ class _WorkspaceActions extends ConsumerWidget {
         ),
         IconButton(
           tooltip: l10n.languageTooltip,
-          onPressed:
-              () => unawaited(
-                ref
-                    .read(settingsControllerProvider.notifier)
-                    .setLocale(
-                      l10n.isEnglish
-                          ? const Locale('zh', 'CN')
-                          : const Locale('en'),
-                    ),
-              ),
+          onPressed: () => unawaited(
+            ref
+                .read(settingsControllerProvider.notifier)
+                .setLocale(
+                  l10n.isEnglish
+                      ? const Locale('zh', 'CN')
+                      : const Locale('en'),
+                ),
+          ),
           icon: Text(
             l10n.currentLanguage,
             style: Theme.of(context).textTheme.labelLarge,
@@ -225,12 +222,11 @@ class _WorkspaceActions extends ConsumerWidget {
         IconButton(
           tooltip: l10n.settingsTooltip,
           icon: const Icon(Icons.settings_outlined),
-          onPressed:
-              () => unawaited(
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
-                ),
-              ),
+          onPressed: () => unawaited(
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+            ),
+          ),
         ),
         const SizedBox(width: AppSpacing.small),
       ],
@@ -325,22 +321,19 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
             _query.dueDateFilters.isNotEmpty;
         return Scaffold(
           backgroundColor: Colors.transparent,
-          floatingActionButton:
-              workspace.current.lists.isEmpty
-                  ? null
-                  : FloatingActionButton(
-                    tooltip: l10n.createTodo,
-                    onPressed:
-                        () => unawaited(
-                          Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(
-                              builder:
-                                  (_) => TodoEditorPage(workspace: workspace),
-                            ),
-                          ),
-                        ),
-                    child: const Icon(Icons.add),
+          floatingActionButton: workspace.current.lists.isEmpty
+              ? null
+              : FloatingActionButton(
+                  tooltip: l10n.createTodo,
+                  onPressed: () => unawaited(
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => TodoEditorPage(workspace: workspace),
+                      ),
+                    ),
                   ),
+                  child: const Icon(Icons.add),
+                ),
           body: Center(
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -389,21 +382,19 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                               floatingLabelBehavior:
                                   FloatingLabelBehavior.always,
                               prefixIcon: const Icon(Icons.search),
-                              suffixIcon:
-                                  _searchController.text.isEmpty
-                                      ? null
-                                      : IconButton(
-                                        tooltip:
-                                            MaterialLocalizations.of(
-                                              context,
-                                            ).deleteButtonTooltip,
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearchChanged('');
-                                          setState(() {});
-                                        },
-                                        icon: const Icon(Icons.clear),
-                                      ),
+                              suffixIcon: _searchController.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: MaterialLocalizations.of(
+                                        context,
+                                      ).deleteButtonTooltip,
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _onSearchChanged('');
+                                        setState(() {});
+                                      },
+                                      icon: const Icon(Icons.clear),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.small),
@@ -415,16 +406,14 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                                 .toList(growable: false),
                             onPrioritySelected: _togglePriority,
                             onTagSelected: _toggleTag,
-                            onCompletedSelected:
-                                (completed) => _setQuery(
-                                  completed == null
-                                      ? _query.copyWith(clearCompleted: true)
-                                      : _query.copyWith(completed: completed),
-                                ),
+                            onCompletedSelected: (completed) => _setQuery(
+                              completed == null
+                                  ? _query.copyWith(clearCompleted: true)
+                                  : _query.copyWith(completed: completed),
+                            ),
                             onDueDateSelected: _toggleDueDate,
-                            onSortSelected:
-                                (sort) =>
-                                    _setQuery(_query.copyWith(sort: sort)),
+                            onSortSelected: (sort) =>
+                                _setQuery(_query.copyWith(sort: sort)),
                           ),
                           const SizedBox(height: AppSpacing.section),
                           if (result.matches.isEmpty &&
@@ -505,24 +494,23 @@ class _QueryControls extends StatelessWidget {
               PopupMenuButton<_CompletionChoice>(
                 key: const ValueKey('todo-status-filter'),
                 onSelected: (choice) => onCompletedSelected(choice.value),
-                itemBuilder:
-                    (context) => [
-                      CheckedPopupMenuItem(
-                        value: _CompletionChoice.all,
-                        checked: query.completed == null,
-                        child: Text(l10n.allFilter),
-                      ),
-                      CheckedPopupMenuItem(
-                        value: _CompletionChoice.active,
-                        checked: query.completed == false,
-                        child: Text(l10n.activeFilter),
-                      ),
-                      CheckedPopupMenuItem(
-                        value: _CompletionChoice.completed,
-                        checked: query.completed == true,
-                        child: Text(l10n.completedFilter),
-                      ),
-                    ],
+                itemBuilder: (context) => [
+                  CheckedPopupMenuItem(
+                    value: _CompletionChoice.all,
+                    checked: query.completed == null,
+                    child: Text(l10n.allFilter),
+                  ),
+                  CheckedPopupMenuItem(
+                    value: _CompletionChoice.active,
+                    checked: query.completed == false,
+                    child: Text(l10n.activeFilter),
+                  ),
+                  CheckedPopupMenuItem(
+                    value: _CompletionChoice.completed,
+                    checked: query.completed == true,
+                    child: Text(l10n.completedFilter),
+                  ),
+                ],
                 child: _FilterButtonLabel(
                   label: _statusLabel(l10n, query.completed),
                 ),
@@ -598,16 +586,15 @@ class _PriorityMenu extends StatelessWidget {
     return PopupMenuButton<TodoPriority>(
       key: const ValueKey('todo-priority-filter'),
       onSelected: onSelected,
-      itemBuilder:
-          (context) => TodoPriority.values
-              .map(
-                (priority) => CheckedPopupMenuItem(
-                  value: priority,
-                  checked: query.priorities.contains(priority),
-                  child: Text(_priorityLabel(l10n, priority)),
-                ),
-              )
-              .toList(growable: false),
+      itemBuilder: (context) => TodoPriority.values
+          .map(
+            (priority) => CheckedPopupMenuItem(
+              value: priority,
+              checked: query.priorities.contains(priority),
+              child: Text(_priorityLabel(l10n, priority)),
+            ),
+          )
+          .toList(growable: false),
       child: _FilterButtonLabel(label: l10n.filterPriority),
     );
   }
@@ -668,16 +655,15 @@ class _DueDateMenu extends StatelessWidget {
     return PopupMenuButton<TodoDueDateFilter>(
       key: const ValueKey('todo-due-date-filter'),
       onSelected: onSelected,
-      itemBuilder:
-          (context) => TodoDueDateFilter.values
-              .map(
-                (filter) => CheckedPopupMenuItem(
-                  value: filter,
-                  checked: query.dueDateFilters.contains(filter),
-                  child: Text(labels[filter]!),
-                ),
-              )
-              .toList(growable: false),
+      itemBuilder: (context) => TodoDueDateFilter.values
+          .map(
+            (filter) => CheckedPopupMenuItem(
+              value: filter,
+              checked: query.dueDateFilters.contains(filter),
+              child: Text(labels[filter]!),
+            ),
+          )
+          .toList(growable: false),
       child: _FilterButtonLabel(label: l10n.filterDueDate),
     );
   }
@@ -828,18 +814,14 @@ class _TodoRow extends StatelessWidget {
               ),
               Expanded(
                 child: InkWell(
-                  onTap:
-                      () => unawaited(
-                        Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (_) => TodoEditorPage(
-                                  workspace: workspace,
-                                  todo: todo,
-                                ),
-                          ),
-                        ),
+                  onTap: () => unawaited(
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            TodoEditorPage(workspace: workspace, todo: todo),
                       ),
+                    ),
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
                       minHeight: AppDimensions.minimumTouchTarget,
@@ -850,12 +832,7 @@ class _TodoRow extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (todo.title.isEmpty)
-                            const SizedBox(
-                              height: AppDimensions.minimumTouchTarget,
-                            )
-                          else
-                            _HighlightedTitle(match: match),
+                          _HighlightedTitle(match: match),
                           if (todo.tags.isNotEmpty || todo.dueDate != null) ...[
                             const SizedBox(height: AppSpacing.xSmall),
                             _TodoMetadata(todo: todo),
@@ -887,16 +864,15 @@ class _HighlightedTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = match.todo.title;
+    final title = match.todo.displayText;
     if (match.titleRanges.isEmpty) {
       return Text(
         title,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style:
-            match.todo.completed
-                ? const TextStyle(decoration: TextDecoration.lineThrough)
-                : null,
+        style: match.todo.completed
+            ? const TextStyle(decoration: TextDecoration.lineThrough)
+            : null,
       );
     }
 
