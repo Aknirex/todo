@@ -81,6 +81,24 @@ void main() {
     expect(find.text('High todo'), findsOneWidget);
     expect(find.text('Low todo'), findsNothing);
   });
+
+  testWidgets('shows detail summary for untitled Todos and keeps blank rows', (
+    tester,
+  ) async {
+    final workspace = TodoWorkspace(
+      MemoryTodoWorkspaceStore(
+        todos: [
+          _todo('detail', detail: 'Meeting notes for the mobile workspace'),
+          _todo('blank'),
+        ],
+      ),
+    );
+    await workspace.start();
+    await _pumpApp(tester, workspace);
+
+    expect(find.text('Meeting notes for the mobile workspace'), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-delete-blank')), findsOneWidget);
+  });
 }
 
 Todo _todo(

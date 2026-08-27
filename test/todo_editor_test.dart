@@ -5,10 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aknirex_todo/app.dart';
 import 'package:aknirex_todo/core/settings/settings_controller.dart';
 import 'package:aknirex_todo/features/workspace/todo.dart';
+import 'package:aknirex_todo/features/workspace/todo_editor_page.dart';
 import 'package:aknirex_todo/features/workspace/todo_workspace.dart';
 import 'package:aknirex_todo/providers.dart';
 
 void main() {
+  test('parses mixed comma separators and normalizes Tag values', () {
+    expect(parseTodoTags(' work ， home, ,work，home '), ['work', 'home']);
+  });
+
   testWidgets('new Todo editor focuses detail and page back discards it', (
     tester,
   ) async {
