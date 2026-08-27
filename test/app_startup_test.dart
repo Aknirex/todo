@@ -88,7 +88,7 @@ void main() {
 
       expect(workspace.current.todos, hasLength(1));
       expect(find.byType(Checkbox), findsOneWidget);
-      expect(find.text('No Todos yet.'), findsOneWidget);
+      expect(find.text('No completed Todos.'), findsOneWidget);
 
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();

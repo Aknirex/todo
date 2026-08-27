@@ -67,5 +67,6 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
     expect(find.text('Redo'), findsOneWidget);
+    expect(find.text('切换到简体中文'), findsNothing);
   });
 }
