@@ -153,6 +153,62 @@ void main() {
     expect(find.text('Meeting notes for the mobile workspace'), findsOneWidget);
     expect(find.byKey(const ValueKey('todo-delete-blank')), findsOneWidget);
   });
+
+  testWidgets('narrow screens expose sibling sort and filter controls', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final workspace = TodoWorkspace(
+      MemoryTodoWorkspaceStore(
+        todos: [
+          _todo('high', title: 'Alpha', priority: TodoPriority.high),
+          _todo(
+            'high-tag',
+            title: 'Zulu',
+            priority: TodoPriority.high,
+            tags: const ['work'],
+          ),
+          _todo('low', title: 'Bravo', priority: TodoPriority.low),
+        ],
+      ),
+    );
+    await workspace.start();
+    await _pumpApp(tester, workspace);
+
+    final sort = find.byKey(const ValueKey('todo-sort-filter'));
+    await tester.ensureVisible(sort);
+    expect(tester.getSize(sort).height, greaterThanOrEqualTo(48));
+    await tester.tap(sort);
+    await tester.pumpAndSettle();
+    expect(find.text('Title Z-A'), findsOneWidget);
+    await tester.tap(find.text('Title Z-A'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final priority = find.byKey(const ValueKey('todo-priority-filter'));
+    await tester.ensureVisible(priority);
+    await tester.tap(priority);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('High').last, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final tag = find.byKey(const ValueKey('todo-tag-filter'));
+    await tester.ensureVisible(tag);
+    await tester.tap(tag);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('work').last, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Zulu'), findsOneWidget);
+    expect(find.text('Alpha'), findsNothing);
+    expect(find.text('Bravo'), findsNothing);
+  });
 }
 
 Todo _todo(
@@ -160,7 +216,7 @@ Todo _todo(
   String title = '',
   String detail = '',
   TodoPriority priority = TodoPriority.medium,
-  List<String> tags = const [],
+  Iterable<String> tags = const <String>[],
 }) {
   return Todo.create(
     id: id,

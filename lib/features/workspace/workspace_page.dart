@@ -67,12 +67,11 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
           minimum: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
           child: ListenableBuilder(
             listenable: _search,
-            builder:
-                (context, child) => AnimatedOpacity(
-                  opacity: _search.expanded ? 0.45 : 1,
-                  duration: const Duration(milliseconds: 180),
-                  child: child,
-                ),
+            builder: (context, child) => AnimatedOpacity(
+              opacity: _search.expanded ? 0.45 : 1,
+              duration: const Duration(milliseconds: 180),
+              child: child,
+            ),
             child: _WorkspaceContent(
               workspace: widget.workspace,
               search: _search,
@@ -196,64 +195,62 @@ class _MobileSearchTitle extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           switchInCurve: Curves.easeOut,
           switchOutCurve: Curves.easeIn,
-          child:
-              search.expanded
-                  ? Container(
-                    key: const ValueKey('mobile-search-surface'),
-                    height: AppDimensions.minimumTouchTarget,
-                    decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(AppRadii.large),
-                    ),
-                    padding: const EdgeInsets.only(left: AppSpacing.small),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search,
-                          size: 22,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        Expanded(
-                          child: TextField(
-                            key: const ValueKey('mobile-search-input'),
-                            controller: search.text,
-                            autofocus: true,
-                            onChanged: search.change,
-                            onSubmitted: (_) {
-                              search.submit();
-                              search.collapse();
-                            },
-                            textInputAction: TextInputAction.search,
-                            maxLines: 1,
-                            scrollPadding: EdgeInsets.zero,
-                            decoration: InputDecoration(
-                              hintText:
-                                  AppLocalizations.of(context).searchTodos,
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.small,
-                              ),
+          child: search.expanded
+              ? Container(
+                  key: const ValueKey('mobile-search-surface'),
+                  height: AppDimensions.minimumTouchTarget,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadii.large),
+                  ),
+                  padding: const EdgeInsets.only(left: AppSpacing.small),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search,
+                        size: 22,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      Expanded(
+                        child: TextField(
+                          key: const ValueKey('mobile-search-input'),
+                          controller: search.text,
+                          autofocus: true,
+                          onChanged: search.change,
+                          onSubmitted: (_) {
+                            search.submit();
+                            search.collapse();
+                          },
+                          textInputAction: TextInputAction.search,
+                          maxLines: 1,
+                          scrollPadding: EdgeInsets.zero,
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context).searchTodos,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.small,
                             ),
                           ),
                         ),
-                        if (search.text.text.isNotEmpty)
-                          IconButton(
-                            key: const ValueKey('mobile-search-clear'),
-                            tooltip:
-                                MaterialLocalizations.of(
-                                  context,
-                                ).deleteButtonTooltip,
-                            onPressed: search.clearSearch,
-                            icon: const Icon(Icons.clear),
-                          ),
-                      ],
-                    ),
-                  )
-                  : Text(
-                    AppLocalizations.of(context).workspaceTitle,
-                    key: const ValueKey('workspace-title'),
+                      ),
+                      if (search.text.text.isNotEmpty)
+                        IconButton(
+                          key: const ValueKey('mobile-search-clear'),
+                          tooltip: MaterialLocalizations.of(
+                            context,
+                          ).deleteButtonTooltip,
+                          onPressed: search.clearSearch,
+                          icon: const Icon(Icons.clear),
+                        ),
+                    ],
                   ),
+                )
+              : Text(
+                  AppLocalizations.of(context).workspaceTitle,
+                  key: const ValueKey('workspace-title'),
+                ),
         );
       },
     );
@@ -337,6 +334,16 @@ class _WorkspaceActions extends ConsumerWidget {
             switch (action) {
               case _WorkspaceAction.theme:
                 onTheme();
+              case _WorkspaceAction.language:
+                unawaited(
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .setLocale(
+                        l10n.isEnglish
+                            ? const Locale('zh', 'CN')
+                            : const Locale('en'),
+                      ),
+                );
               case _WorkspaceAction.undo:
                 unawaited(workspace.undo());
               case _WorkspaceAction.redo:
@@ -355,6 +362,10 @@ class _WorkspaceActions extends ConsumerWidget {
             PopupMenuItem(
               value: _WorkspaceAction.theme,
               child: Text(l10n.themeMenuLabel),
+            ),
+            PopupMenuItem(
+              value: _WorkspaceAction.language,
+              child: Text(l10n.languageTooltip),
             ),
             PopupMenuItem(
               value: _WorkspaceAction.undo,
@@ -384,6 +395,22 @@ class _WorkspaceActions extends ConsumerWidget {
           icon: const Icon(Icons.brightness_6_outlined),
           onPressed: onTheme,
         ),
+        IconButton(
+          tooltip: l10n.languageTooltip,
+          onPressed: () => unawaited(
+            ref
+                .read(settingsControllerProvider.notifier)
+                .setLocale(
+                  l10n.isEnglish
+                      ? const Locale('zh', 'CN')
+                      : const Locale('en'),
+                ),
+          ),
+          icon: Text(
+            l10n.currentLanguage,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
         TodoHistoryActions(workspace: workspace),
         IconButton(
           tooltip: l10n.settingsTooltip,
@@ -400,7 +427,7 @@ class _WorkspaceActions extends ConsumerWidget {
   }
 }
 
-enum _WorkspaceAction { theme, undo, redo, settings }
+enum _WorkspaceAction { theme, language, undo, redo, settings }
 
 class _WorkspaceContent extends StatefulWidget {
   const _WorkspaceContent({required this.workspace, required this.search});
@@ -534,17 +561,15 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                                 floatingLabelBehavior:
                                     FloatingLabelBehavior.always,
                                 prefixIcon: const Icon(Icons.search),
-                                suffixIcon:
-                                    search.text.text.isEmpty
-                                        ? null
-                                        : IconButton(
-                                          tooltip:
-                                              MaterialLocalizations.of(
-                                                context,
-                                              ).deleteButtonTooltip,
-                                          onPressed: search.clearSearch,
-                                          icon: const Icon(Icons.clear),
-                                        ),
+                                suffixIcon: search.text.text.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        tooltip: MaterialLocalizations.of(
+                                          context,
+                                        ).deleteButtonTooltip,
+                                        onPressed: search.clearSearch,
+                                        icon: const Icon(Icons.clear),
+                                      ),
                               ),
                             ),
                           const SizedBox(height: AppSpacing.small),
@@ -556,15 +581,14 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                                 .toList(growable: false),
                             onPrioritySelected: _togglePriority,
                             onTagSelected: _toggleTag,
-                            onCompletedSelected:
-                                (completed) => _setQuery(
-                                  completed == null
-                                      ? query.copyWith(clearCompleted: true)
-                                      : query.copyWith(completed: completed),
-                                ),
+                            onCompletedSelected: (completed) => _setQuery(
+                              completed == null
+                                  ? query.copyWith(clearCompleted: true)
+                                  : query.copyWith(completed: completed),
+                            ),
                             onDueDateSelected: _toggleDueDate,
-                            onSortSelected:
-                                (sort) => _setQuery(query.copyWith(sort: sort)),
+                            onSortSelected: (sort) =>
+                                _setQuery(query.copyWith(sort: sort)),
                           ),
                           const SizedBox(height: AppSpacing.section),
                           if (result.matches.isEmpty &&
@@ -667,41 +691,8 @@ class _QueryControls extends StatelessWidget {
                 ),
               ),
               _DueDateMenu(query: query, onSelected: onDueDateSelected),
+              _SortMenu(query: query, onSelected: onSortSelected),
             ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.small),
-        KeyedSubtree(
-          key: ValueKey('todo-sort-value-${query.sort.name}'),
-          child: DropdownButtonFormField<TodoSort>(
-            key: const ValueKey('todo-sort-filter'),
-            initialValue: query.sort,
-            decoration: InputDecoration(labelText: l10n.sortLabel),
-            items: [
-              DropdownMenuItem(
-                value: TodoSort.activeNewest,
-                child: Text(l10n.sortActiveNewest),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.priority,
-                child: Text(l10n.sortPriority),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.dueDate,
-                child: Text(l10n.sortDueDate),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.titleAscending,
-                child: Text(l10n.sortTitleAscending),
-              ),
-              DropdownMenuItem(
-                value: TodoSort.titleDescending,
-                child: Text(l10n.sortTitleDescending),
-              ),
-            ],
-            onChanged: (sort) {
-              if (sort != null) onSortSelected(sort);
-            },
           ),
         ),
       ],
@@ -712,6 +703,41 @@ class _QueryControls extends StatelessWidget {
     if (completed == true) return l10n.completedFilter;
     if (completed == false) return l10n.activeFilter;
     return l10n.filterStatus;
+  }
+}
+
+class _SortMenu extends StatelessWidget {
+  const _SortMenu({required this.query, required this.onSelected});
+
+  final TodoQuery query;
+  final ValueChanged<TodoSort> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final labels = {
+      TodoSort.activeNewest: l10n.sortActiveNewest,
+      TodoSort.priority: l10n.sortPriority,
+      TodoSort.dueDate: l10n.sortDueDate,
+      TodoSort.titleAscending: l10n.sortTitleAscending,
+      TodoSort.titleDescending: l10n.sortTitleDescending,
+    };
+    return PopupMenuButton<TodoSort>(
+      key: const ValueKey('todo-sort-filter'),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, AppSpacing.xSmall),
+      onSelected: onSelected,
+      itemBuilder: (context) => TodoSort.values
+          .map(
+            (sort) => CheckedPopupMenuItem(
+              value: sort,
+              checked: query.sort == sort,
+              child: Text(labels[sort]!),
+            ),
+          )
+          .toList(growable: false),
+      child: _FilterButtonLabel(label: l10n.sortLabel),
+    );
   }
 }
 
