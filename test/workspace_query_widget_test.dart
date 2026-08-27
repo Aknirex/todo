@@ -9,6 +9,60 @@ import 'package:aknirex_todo/features/workspace/todo_workspace.dart';
 import 'package:aknirex_todo/providers.dart';
 
 void main() {
+  testWidgets('mobile search expands, submits, clears, and collapses', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final workspace = TodoWorkspace(
+      MemoryTodoWorkspaceStore(
+        todos: [
+          _todo('detail', title: 'Alpha', detail: 'needle detail'),
+          _todo('tag', title: 'Beta', tags: const ['needle']),
+        ],
+      ),
+    );
+    await workspace.start();
+    await _pumpApp(tester, workspace);
+
+    expect(find.byKey(const ValueKey('mobile-search-input')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('mobile-search-toggle')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('mobile-search-surface')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('mobile-search-input')),
+      'needle',
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Alpha'), findsOneWidget);
+    expect(find.text('Beta'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('mobile-search-submit')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('mobile-search-input')), findsNothing);
+    expect(find.text('Alpha'), findsOneWidget);
+    expect(find.text('Beta'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('mobile-search-toggle')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('mobile-search-clear')));
+    await tester.pump();
+    expect(find.text('Alpha'), findsOneWidget);
+    expect(find.text('Beta'), findsOneWidget);
+    expect(find.byKey(const ValueKey('mobile-search-surface')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('mobile-search-submit')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('mobile-search-surface')), findsNothing);
+  });
+
   testWidgets('search is debounced, highlights titles, and shows no results', (
     tester,
   ) async {
@@ -88,6 +142,7 @@ Todo _todo(
   String title = '',
   String detail = '',
   TodoPriority priority = TodoPriority.medium,
+  List<String> tags = const [],
 }) {
   return Todo.create(
     id: id,
@@ -95,6 +150,7 @@ Todo _todo(
     title: title,
     detail: detail,
     priority: priority,
+    tags: tags,
     createdAt: DateTime(2026, 8, 1),
     updatedAt: DateTime(2026, 8, 1),
   );

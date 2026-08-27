@@ -14,14 +14,32 @@ import 'todo_history_actions.dart';
 import 'todo_query.dart';
 import 'todo_workspace.dart';
 
-class WorkspacePage extends ConsumerWidget {
+class WorkspacePage extends ConsumerStatefulWidget {
   const WorkspacePage({required this.workspace, super.key});
 
   final TodoWorkspace workspace;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
+  ConsumerState<WorkspacePage> createState() => _WorkspacePageState();
+}
+
+class _WorkspacePageState extends ConsumerState<WorkspacePage> {
+  late final _WorkspaceSearchController _search;
+
+  @override
+  void initState() {
+    super.initState();
+    _search = _WorkspaceSearchController();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final overlayStyle =
         isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
@@ -34,17 +52,31 @@ class WorkspacePage extends ConsumerWidget {
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: Text(l10n.workspaceTitle),
+          title: _MobileSearchTitle(search: _search),
           actions: [
+            if (MediaQuery.sizeOf(context).width < 600)
+              _MobileSearchActions(search: _search),
             _WorkspaceActions(
-              workspace: workspace,
+              workspace: widget.workspace,
               onTheme: () => unawaited(_showThemeMenu(context, ref)),
             ),
           ],
         ),
         body: SafeArea(
           minimum: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
-          child: _WorkspaceContent(workspace: workspace),
+          child: ListenableBuilder(
+            listenable: _search,
+            builder:
+                (context, child) => AnimatedOpacity(
+                  opacity: _search.expanded ? 0.45 : 1,
+                  duration: const Duration(milliseconds: 180),
+                  child: child,
+                ),
+            child: _WorkspaceContent(
+              workspace: widget.workspace,
+              search: _search,
+            ),
+          ),
         ),
       ),
     );
@@ -93,6 +125,170 @@ class WorkspacePage extends ConsumerWidget {
     if (choice != null && context.mounted) {
       await ref.read(settingsControllerProvider.notifier).setThemeMode(choice);
     }
+  }
+}
+
+class _WorkspaceSearchController extends ChangeNotifier {
+  final TextEditingController text = TextEditingController();
+  Timer? _debounce;
+  TodoQuery query = const TodoQuery();
+  bool expanded = false;
+
+  void expand() {
+    expanded = true;
+    notifyListeners();
+  }
+
+  void collapse() {
+    expanded = false;
+    notifyListeners();
+  }
+
+  void change(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      query = query.copyWith(search: value);
+      notifyListeners();
+    });
+    notifyListeners();
+  }
+
+  void submit() {
+    _debounce?.cancel();
+    query = query.copyWith(search: text.text);
+    notifyListeners();
+  }
+
+  void clearSearch() {
+    _debounce?.cancel();
+    text.clear();
+    query = query.copyWith(search: '');
+    notifyListeners();
+  }
+
+  void updateQuery(TodoQuery value) {
+    query = value;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    text.dispose();
+    super.dispose();
+  }
+}
+
+class _MobileSearchTitle extends StatelessWidget {
+  const _MobileSearchTitle({required this.search});
+
+  final _WorkspaceSearchController search;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.sizeOf(context).width >= 600) {
+      return Text(AppLocalizations.of(context).workspaceTitle);
+    }
+    return ListenableBuilder(
+      listenable: search,
+      builder: (context, _) {
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child:
+              search.expanded
+                  ? Container(
+                    key: const ValueKey('mobile-search-surface'),
+                    height: AppDimensions.minimumTouchTarget,
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppRadii.large),
+                    ),
+                    padding: const EdgeInsets.only(left: AppSpacing.small),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.search,
+                          size: 22,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        Expanded(
+                          child: TextField(
+                            key: const ValueKey('mobile-search-input'),
+                            controller: search.text,
+                            autofocus: true,
+                            onChanged: search.change,
+                            onSubmitted: (_) {
+                              search.submit();
+                              search.collapse();
+                            },
+                            textInputAction: TextInputAction.search,
+                            maxLines: 1,
+                            scrollPadding: EdgeInsets.zero,
+                            decoration: InputDecoration(
+                              hintText:
+                                  AppLocalizations.of(context).searchTodos,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.small,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (search.text.text.isNotEmpty)
+                          IconButton(
+                            key: const ValueKey('mobile-search-clear'),
+                            tooltip:
+                                MaterialLocalizations.of(
+                                  context,
+                                ).deleteButtonTooltip,
+                            onPressed: search.clearSearch,
+                            icon: const Icon(Icons.clear),
+                          ),
+                      ],
+                    ),
+                  )
+                  : Text(
+                    AppLocalizations.of(context).workspaceTitle,
+                    key: const ValueKey('workspace-title'),
+                  ),
+        );
+      },
+    );
+  }
+}
+
+class _MobileSearchActions extends StatelessWidget {
+  const _MobileSearchActions({required this.search});
+
+  final _WorkspaceSearchController search;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: search,
+      builder: (context, _) {
+        if (!search.expanded) {
+          return IconButton(
+            key: const ValueKey('mobile-search-toggle'),
+            tooltip: AppLocalizations.of(context).searchTodos,
+            onPressed: search.expand,
+            icon: const Icon(Icons.search),
+          );
+        }
+        return IconButton(
+          key: const ValueKey('mobile-search-submit'),
+          tooltip: MaterialLocalizations.of(context).okButtonLabel,
+          onPressed: () {
+            search.submit();
+            search.collapse();
+          },
+          icon: const Icon(Icons.check),
+        );
+      },
+    );
   }
 }
 
@@ -241,65 +437,55 @@ class _WorkspaceActions extends ConsumerWidget {
 enum _WorkspaceAction { theme, language, undo, redo, settings }
 
 class _WorkspaceContent extends StatefulWidget {
-  const _WorkspaceContent({required this.workspace});
+  const _WorkspaceContent({required this.workspace, required this.search});
 
   final TodoWorkspace workspace;
+  final _WorkspaceSearchController search;
 
   @override
   State<_WorkspaceContent> createState() => _WorkspaceContentState();
 }
 
 class _WorkspaceContentState extends State<_WorkspaceContent> {
-  late final TextEditingController _searchController;
-  Timer? _searchDebounce;
-  TodoQuery _query = const TodoQuery();
-
   TodoWorkspace get workspace => widget.workspace;
+  _WorkspaceSearchController get search => widget.search;
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
+    search.addListener(_onSearchUpdated);
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
-    _searchController.dispose();
+    search.removeListener(_onSearchUpdated);
     super.dispose();
   }
 
-  void _onSearchChanged(String value) {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      setState(() => _query = _query.copyWith(search: value));
-    });
-  }
+  void _onSearchUpdated() => setState(() {});
 
-  void _setQuery(TodoQuery query) => setState(() => _query = query);
+  void _setQuery(TodoQuery query) => search.updateQuery(query);
 
   void _togglePriority(TodoPriority priority) {
-    final priorities = Set<TodoPriority>.of(_query.priorities);
+    final priorities = Set<TodoPriority>.of(search.query.priorities);
     if (!priorities.add(priority)) priorities.remove(priority);
-    _setQuery(_query.copyWith(priorities: priorities));
+    _setQuery(search.query.copyWith(priorities: priorities));
   }
 
   void _toggleTag(String tag) {
-    final tags = Set<String>.of(_query.tags);
+    final tags = Set<String>.of(search.query.tags);
     if (!tags.add(tag)) tags.remove(tag);
-    _setQuery(_query.copyWith(tags: tags));
+    _setQuery(search.query.copyWith(tags: tags));
   }
 
   void _toggleDueDate(TodoDueDateFilter filter) {
-    final filters = Set<TodoDueDateFilter>.of(_query.dueDateFilters);
+    final filters = Set<TodoDueDateFilter>.of(search.query.dueDateFilters);
     if (!filters.add(filter)) filters.remove(filter);
-    _setQuery(_query.copyWith(dueDateFilters: filters));
+    _setQuery(search.query.copyWith(dueDateFilters: filters));
   }
 
   void _clearQuery() {
-    _searchDebounce?.cancel();
-    _searchController.clear();
+    search.clearSearch();
     _setQuery(const TodoQuery());
   }
 
@@ -309,7 +495,8 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
       listenable: workspace,
       builder: (context, _) {
         final l10n = AppLocalizations.of(context);
-        final result = workspace.queryTodos(query: _query);
+        final query = search.query;
+        final result = workspace.queryTodos(query: query);
         final active = result.matches
             .where((match) => !match.todo.completed)
             .toList(growable: false);
@@ -318,11 +505,11 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
             .toList(growable: false);
         final allTodos = workspace.current.todos;
         final hasQuery =
-            _query.search.trim().isNotEmpty ||
-            _query.priorities.isNotEmpty ||
-            _query.tags.isNotEmpty ||
-            _query.completed != null ||
-            _query.dueDateFilters.isNotEmpty;
+            query.search.trim().isNotEmpty ||
+            query.priorities.isNotEmpty ||
+            query.tags.isNotEmpty ||
+            query.completed != null ||
+            query.dueDateFilters.isNotEmpty;
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton:
@@ -374,41 +561,39 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: AppSpacing.medium),
-                          TextField(
-                            key: const ValueKey('todo-search-input'),
-                            controller: _searchController,
-                            onChanged: _onSearchChanged,
-                            textInputAction: TextInputAction.search,
-                            scrollPadding: const EdgeInsets.only(
-                              bottom:
-                                  AppSpacing.section +
-                                  AppDimensions.appBarHeight,
+                          if (MediaQuery.sizeOf(context).width >= 600)
+                            TextField(
+                              key: const ValueKey('todo-search-input'),
+                              controller: search.text,
+                              onChanged: search.change,
+                              onSubmitted: (_) => search.submit(),
+                              textInputAction: TextInputAction.search,
+                              scrollPadding: const EdgeInsets.only(
+                                bottom:
+                                    AppSpacing.section +
+                                    AppDimensions.appBarHeight,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: l10n.searchTodos,
+                                floatingLabelBehavior:
+                                    FloatingLabelBehavior.always,
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon:
+                                    search.text.text.isEmpty
+                                        ? null
+                                        : IconButton(
+                                          tooltip:
+                                              MaterialLocalizations.of(
+                                                context,
+                                              ).deleteButtonTooltip,
+                                          onPressed: search.clearSearch,
+                                          icon: const Icon(Icons.clear),
+                                        ),
+                              ),
                             ),
-                            decoration: InputDecoration(
-                              labelText: l10n.searchTodos,
-                              floatingLabelBehavior:
-                                  FloatingLabelBehavior.always,
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon:
-                                  _searchController.text.isEmpty
-                                      ? null
-                                      : IconButton(
-                                        tooltip:
-                                            MaterialLocalizations.of(
-                                              context,
-                                            ).deleteButtonTooltip,
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearchChanged('');
-                                          setState(() {});
-                                        },
-                                        icon: const Icon(Icons.clear),
-                                      ),
-                            ),
-                          ),
                           const SizedBox(height: AppSpacing.small),
                           _QueryControls(
-                            query: _query,
+                            query: query,
                             availableTags: allTodos
                                 .expand((todo) => todo.tags)
                                 .toSet()
@@ -418,13 +603,12 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                             onCompletedSelected:
                                 (completed) => _setQuery(
                                   completed == null
-                                      ? _query.copyWith(clearCompleted: true)
-                                      : _query.copyWith(completed: completed),
+                                      ? query.copyWith(clearCompleted: true)
+                                      : query.copyWith(completed: completed),
                                 ),
                             onDueDateSelected: _toggleDueDate,
                             onSortSelected:
-                                (sort) =>
-                                    _setQuery(_query.copyWith(sort: sort)),
+                                (sort) => _setQuery(query.copyWith(sort: sort)),
                           ),
                           const SizedBox(height: AppSpacing.section),
                           if (result.matches.isEmpty &&
