@@ -141,16 +141,6 @@ class _WorkspaceActions extends ConsumerWidget {
             switch (action) {
               case _WorkspaceAction.theme:
                 onTheme();
-              case _WorkspaceAction.language:
-                unawaited(
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .setLocale(
-                        l10n.isEnglish
-                            ? const Locale('zh', 'CN')
-                            : const Locale('en'),
-                      ),
-                );
               case _WorkspaceAction.undo:
                 unawaited(workspace.undo());
               case _WorkspaceAction.redo:
@@ -169,10 +159,6 @@ class _WorkspaceActions extends ConsumerWidget {
             PopupMenuItem(
               value: _WorkspaceAction.theme,
               child: Text(l10n.themeMenuLabel),
-            ),
-            PopupMenuItem(
-              value: _WorkspaceAction.language,
-              child: Text(l10n.languageTooltip),
             ),
             PopupMenuItem(
               value: _WorkspaceAction.undo,
@@ -202,22 +188,6 @@ class _WorkspaceActions extends ConsumerWidget {
           icon: const Icon(Icons.brightness_6_outlined),
           onPressed: onTheme,
         ),
-        IconButton(
-          tooltip: l10n.languageTooltip,
-          onPressed: () => unawaited(
-            ref
-                .read(settingsControllerProvider.notifier)
-                .setLocale(
-                  l10n.isEnglish
-                      ? const Locale('zh', 'CN')
-                      : const Locale('en'),
-                ),
-          ),
-          icon: Text(
-            l10n.currentLanguage,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
         TodoHistoryActions(workspace: workspace),
         IconButton(
           tooltip: l10n.settingsTooltip,
@@ -234,7 +204,7 @@ class _WorkspaceActions extends ConsumerWidget {
   }
 }
 
-enum _WorkspaceAction { theme, language, undo, redo, settings }
+enum _WorkspaceAction { theme, undo, redo, settings }
 
 class _WorkspaceContent extends StatefulWidget {
   const _WorkspaceContent({required this.workspace});
@@ -356,13 +326,6 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                           Text(
                             list.name,
                             style: Theme.of(context).textTheme.displaySmall,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: AppSpacing.xSmall),
-                          Text(
-                            l10n.workspaceSubtitle,
-                            style: Theme.of(context).textTheme.bodyLarge,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -758,6 +721,7 @@ class _TodoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -768,7 +732,9 @@ class _TodoSection extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
               child: Text(
-                AppLocalizations.of(context).noTodos,
+                title == l10n.activeTodos
+                    ? l10n.noActiveTodos
+                    : l10n.noCompletedTodos,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
