@@ -11,5 +11,6 @@
 | 3 | 修改待办项无法保存 | bug | ready-for-agent | [brief-03-edit-save.md](brief-03-edit-save.md) | P1 |
 | 4 | 搜索输入框高度不足、文本裁切 | bug | ready-for-agent | [brief-04-search-input-height.md](brief-04-search-input-height.md) | P1 |
 | 5 | 整体 UI 尺寸不适合现代手机 | enhancement | ready-for-human | [brief-05-ui-size.md](brief-05-ui-size.md) | P2 — 需设计决策 |
+| 6 | 移动端工作区体验与 Todo 创建流程优化 | enhancement | ready-for-agent | [brief-06-mobile-workspace-ux.md](brief-06-mobile-workspace-ux.md) | P1 — 基于实机反馈 |
 
 **核验结论（2026-08-15）：** #1–#3 已代码级确认；#4 代码路径吻合但需真机复现；#5 为设计密度问题。修完 #1 后应重新走查全页面（浮层、侧栏、下拉面板、FAB 底部安全区），可能暴露关联 bug。
