@@ -1,3 +1,4 @@
+import 'package:characters/characters.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aknirex_todo/features/workspace/todo.dart';
@@ -155,6 +156,41 @@ void main() {
       '12345678901234567890123456789012345678901234567890…',
     );
     expect(blank.displayText, isNotEmpty);
+  });
+
+  test(
+    'displayText truncates at grapheme boundaries without emoji corruption',
+    () {
+      final family = '👨‍👩‍👧‍👦';
+      final todo = _todo('emoji', detail: family * 51);
+
+      final text = todo.displayText;
+
+      expect(text, endsWith('…'));
+      expect(text.contains('\uFFFD'), isFalse);
+      expect(text.characters.length, 51);
+      expect(text.characters.take(50).join(), family * 50);
+    },
+  );
+
+  test('whitespace-only titles fall back to the detail summary', () {
+    final todo = _todo('spaces', title: '   ', detail: 'Fallback summary');
+
+    expect(todo.displayText, 'Fallback summary');
+  });
+
+  test('untitled Todo detail summaries are highlightable by search', () {
+    final result = TodoQueryEngine.apply(
+      [_todo('untitled', detail: 'Meeting notes for the mobile workspace')],
+      const TodoQuery(search: 'meeting'),
+      now: now,
+    );
+
+    final match = result.matches.single;
+    expect(match.titleMatches, isTrue);
+    expect(match.titleRanges, hasLength(1));
+    expect(match.titleRanges.single.start, 0);
+    expect(match.titleRanges.single.end, 7);
   });
 }
 

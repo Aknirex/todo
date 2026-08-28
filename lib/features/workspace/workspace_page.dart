@@ -14,6 +14,11 @@ import 'todo_history_actions.dart';
 import 'todo_query.dart';
 import 'todo_workspace.dart';
 
+const AnimationStyle _mobileMenuAnimation = AnimationStyle(
+  duration: Duration(milliseconds: 120),
+  reverseDuration: Duration(milliseconds: 120),
+);
+
 class WorkspacePage extends ConsumerStatefulWidget {
   const WorkspacePage({required this.workspace, super.key});
 
@@ -41,43 +46,60 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlayStyle = isDark
-        ? SystemUiOverlayStyle.light
-        : SystemUiOverlayStyle.dark;
+    final overlayStyle =
+        isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle.copyWith(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
       ),
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          title: _MobileSearchTitle(search: _search),
-          actions: [
-            if (MediaQuery.sizeOf(context).width < 600)
-              _MobileSearchActions(search: _search),
-            _WorkspaceActions(
-              workspace: widget.workspace,
-              onTheme: () => unawaited(_showThemeMenu(context, ref)),
+      child: ListenableBuilder(
+        listenable: _search,
+        builder: (context, _) {
+          final isMobile = MediaQuery.sizeOf(context).width < 600;
+          if (!isMobile && _search.expanded) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _search.collapse();
+            });
+          }
+          final searchActive = isMobile && _search.expanded;
+          return PopScope<Object?>(
+            canPop: !searchActive,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop && searchActive) _search.collapse();
+            },
+            child: Scaffold(
+              resizeToAvoidBottomInset: true,
+              appBar: AppBar(
+                title: _MobileSearchTitle(search: _search),
+                actions: [
+                  if (isMobile) _MobileSearchActions(search: _search),
+                  _WorkspaceActions(
+                    workspace: widget.workspace,
+                    onTheme: () => unawaited(_showThemeMenu(context, ref)),
+                  ),
+                ],
+              ),
+              body: SafeArea(
+                minimum: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.page,
+                ),
+                child: IgnorePointer(
+                  ignoring: searchActive,
+                  child: AnimatedOpacity(
+                    opacity: searchActive ? 0.45 : 1,
+                    duration: const Duration(milliseconds: 180),
+                    child: _WorkspaceContent(
+                      workspace: widget.workspace,
+                      search: _search,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ],
-        ),
-        body: SafeArea(
-          minimum: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
-          child: ListenableBuilder(
-            listenable: _search,
-            builder: (context, child) => AnimatedOpacity(
-              opacity: _search.expanded ? 0.45 : 1,
-              duration: const Duration(milliseconds: 180),
-              child: child,
-            ),
-            child: _WorkspaceContent(
-              workspace: widget.workspace,
-              search: _search,
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -89,37 +111,38 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
         ThemeMode.system;
     final choice = await showModalBottomSheet<ThemeMode>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.page),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.themeMenuLabel,
-                style: Theme.of(context).textTheme.titleMedium,
+      builder:
+          (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.page),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.themeMenuLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  _ThemeOption(
+                    label: l10n.themeSystem,
+                    value: ThemeMode.system,
+                    groupValue: selected,
+                  ),
+                  _ThemeOption(
+                    label: l10n.themeLight,
+                    value: ThemeMode.light,
+                    groupValue: selected,
+                  ),
+                  _ThemeOption(
+                    label: l10n.themeDark,
+                    value: ThemeMode.dark,
+                    groupValue: selected,
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.small),
-              _ThemeOption(
-                label: l10n.themeSystem,
-                value: ThemeMode.system,
-                groupValue: selected,
-              ),
-              _ThemeOption(
-                label: l10n.themeLight,
-                value: ThemeMode.light,
-                groupValue: selected,
-              ),
-              _ThemeOption(
-                label: l10n.themeDark,
-                value: ThemeMode.dark,
-                groupValue: selected,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
     if (choice != null && context.mounted) {
       await ref.read(settingsControllerProvider.notifier).setThemeMode(choice);
@@ -195,62 +218,78 @@ class _MobileSearchTitle extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           switchInCurve: Curves.easeOut,
           switchOutCurve: Curves.easeIn,
-          child: search.expanded
-              ? Container(
-                  key: const ValueKey('mobile-search-surface'),
-                  height: AppDimensions.minimumTouchTarget,
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(AppRadii.large),
-                  ),
-                  padding: const EdgeInsets.only(left: AppSpacing.small),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.search,
-                        size: 22,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+          child:
+              search.expanded
+                  ? ConstrainedBox(
+                    key: const ValueKey('mobile-search-surface'),
+                    constraints: const BoxConstraints(
+                      minHeight: AppDimensions.minimumTouchTarget,
+                    ),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color:
+                            Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppRadii.large),
                       ),
-                      Expanded(
-                        child: TextField(
-                          key: const ValueKey('mobile-search-input'),
-                          controller: search.text,
-                          autofocus: true,
-                          onChanged: search.change,
-                          onSubmitted: (_) {
-                            search.submit();
-                            search.collapse();
-                          },
-                          textInputAction: TextInputAction.search,
-                          maxLines: 1,
-                          scrollPadding: EdgeInsets.zero,
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context).searchTodos,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.small,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: AppSpacing.small),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.search,
+                              size: 22,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                             ),
-                          ),
+                            Expanded(
+                              child: TextField(
+                                key: const ValueKey('mobile-search-input'),
+                                controller: search.text,
+                                autofocus: true,
+                                onChanged: search.change,
+                                onSubmitted: (_) {
+                                  search.submit();
+                                  search.collapse();
+                                },
+                                textInputAction: TextInputAction.search,
+                                maxLines: 1,
+                                scrollPadding: EdgeInsets.zero,
+                                textAlignVertical: TextAlignVertical.center,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      AppLocalizations.of(context).searchTodos,
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.small,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (search.text.text.isNotEmpty)
+                              IconButton(
+                                key: const ValueKey('mobile-search-clear'),
+                                tooltip:
+                                    MaterialLocalizations.of(
+                                      context,
+                                    ).deleteButtonTooltip,
+                                onPressed: search.clearSearch,
+                                icon: const Icon(Icons.clear),
+                              ),
+                          ],
                         ),
                       ),
-                      if (search.text.text.isNotEmpty)
-                        IconButton(
-                          key: const ValueKey('mobile-search-clear'),
-                          tooltip: MaterialLocalizations.of(
-                            context,
-                          ).deleteButtonTooltip,
-                          onPressed: search.clearSearch,
-                          icon: const Icon(Icons.clear),
-                        ),
-                    ],
+                    ),
+                  )
+                  : Text(
+                    AppLocalizations.of(context).workspaceTitle,
+                    key: const ValueKey('workspace-title'),
                   ),
-                )
-              : Text(
-                  AppLocalizations.of(context).workspaceTitle,
-                  key: const ValueKey('workspace-title'),
-                ),
         );
       },
     );
@@ -327,63 +366,51 @@ class _WorkspaceActions extends ConsumerWidget {
     if (MediaQuery.sizeOf(context).width < 600) {
       return ListenableBuilder(
         listenable: workspace,
-        builder: (context, _) => PopupMenuButton<_WorkspaceAction>(
-          key: const ValueKey('workspace-actions-menu'),
-          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-          onSelected: (action) {
-            switch (action) {
-              case _WorkspaceAction.theme:
-                onTheme();
-              case _WorkspaceAction.language:
-                unawaited(
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .setLocale(
-                        l10n.isEnglish
-                            ? const Locale('zh', 'CN')
-                            : const Locale('en'),
+        builder:
+            (context, _) => PopupMenuButton<_WorkspaceAction>(
+              key: const ValueKey('workspace-actions-menu'),
+              tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+              onSelected: (action) {
+                switch (action) {
+                  case _WorkspaceAction.theme:
+                    onTheme();
+                  case _WorkspaceAction.undo:
+                    unawaited(workspace.undo());
+                  case _WorkspaceAction.redo:
+                    unawaited(workspace.redo());
+                  case _WorkspaceAction.settings:
+                    unawaited(
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsPage(),
+                        ),
                       ),
-                );
-              case _WorkspaceAction.undo:
-                unawaited(workspace.undo());
-              case _WorkspaceAction.redo:
-                unawaited(workspace.redo());
-              case _WorkspaceAction.settings:
-                unawaited(
-                  Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const SettingsPage(),
+                    );
+                }
+              },
+              itemBuilder:
+                  (context) => [
+                    PopupMenuItem(
+                      value: _WorkspaceAction.theme,
+                      child: Text(l10n.themeMenuLabel),
                     ),
-                  ),
-                );
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: _WorkspaceAction.theme,
-              child: Text(l10n.themeMenuLabel),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.undo,
+                      enabled: workspace.canUndo,
+                      child: Text(l10n.undo),
+                    ),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.redo,
+                      enabled: workspace.canRedo,
+                      child: Text(l10n.redo),
+                    ),
+                    PopupMenuItem(
+                      value: _WorkspaceAction.settings,
+                      child: Text(l10n.settingsTitle),
+                    ),
+                  ],
+              icon: const Icon(Icons.more_vert),
             ),
-            PopupMenuItem(
-              value: _WorkspaceAction.language,
-              child: Text(l10n.languageTooltip),
-            ),
-            PopupMenuItem(
-              value: _WorkspaceAction.undo,
-              enabled: workspace.canUndo,
-              child: Text(l10n.undo),
-            ),
-            PopupMenuItem(
-              value: _WorkspaceAction.redo,
-              enabled: workspace.canRedo,
-              child: Text(l10n.redo),
-            ),
-            PopupMenuItem(
-              value: _WorkspaceAction.settings,
-              child: Text(l10n.settingsTitle),
-            ),
-          ],
-          icon: const Icon(Icons.more_vert),
-        ),
       );
     }
 
@@ -397,15 +424,16 @@ class _WorkspaceActions extends ConsumerWidget {
         ),
         IconButton(
           tooltip: l10n.languageTooltip,
-          onPressed: () => unawaited(
-            ref
-                .read(settingsControllerProvider.notifier)
-                .setLocale(
-                  l10n.isEnglish
-                      ? const Locale('zh', 'CN')
-                      : const Locale('en'),
-                ),
-          ),
+          onPressed:
+              () => unawaited(
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .setLocale(
+                      l10n.isEnglish
+                          ? const Locale('zh', 'CN')
+                          : const Locale('en'),
+                    ),
+              ),
           icon: Text(
             l10n.currentLanguage,
             style: Theme.of(context).textTheme.labelLarge,
@@ -415,11 +443,12 @@ class _WorkspaceActions extends ConsumerWidget {
         IconButton(
           tooltip: l10n.settingsTooltip,
           icon: const Icon(Icons.settings_outlined),
-          onPressed: () => unawaited(
-            Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
-            ),
-          ),
+          onPressed:
+              () => unawaited(
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+                ),
+              ),
         ),
         const SizedBox(width: AppSpacing.small),
       ],
@@ -427,7 +456,7 @@ class _WorkspaceActions extends ConsumerWidget {
   }
 }
 
-enum _WorkspaceAction { theme, language, undo, redo, settings }
+enum _WorkspaceAction { theme, undo, redo, settings }
 
 class _WorkspaceContent extends StatefulWidget {
   const _WorkspaceContent({required this.workspace, required this.search});
@@ -505,19 +534,22 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
             query.dueDateFilters.isNotEmpty;
         return Scaffold(
           backgroundColor: Colors.transparent,
-          floatingActionButton: workspace.current.lists.isEmpty
-              ? null
-              : FloatingActionButton(
-                  tooltip: l10n.createTodo,
-                  onPressed: () => unawaited(
-                    Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => TodoEditorPage(workspace: workspace),
-                      ),
-                    ),
+          floatingActionButton:
+              workspace.current.lists.isEmpty
+                  ? null
+                  : FloatingActionButton(
+                    tooltip: l10n.createTodo,
+                    onPressed:
+                        () => unawaited(
+                          Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder:
+                                  (_) => TodoEditorPage(workspace: workspace),
+                            ),
+                          ),
+                        ),
+                    child: const Icon(Icons.add),
                   ),
-                  child: const Icon(Icons.add),
-                ),
           body: Center(
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -561,15 +593,17 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                                 floatingLabelBehavior:
                                     FloatingLabelBehavior.always,
                                 prefixIcon: const Icon(Icons.search),
-                                suffixIcon: search.text.text.isEmpty
-                                    ? null
-                                    : IconButton(
-                                        tooltip: MaterialLocalizations.of(
-                                          context,
-                                        ).deleteButtonTooltip,
-                                        onPressed: search.clearSearch,
-                                        icon: const Icon(Icons.clear),
-                                      ),
+                                suffixIcon:
+                                    search.text.text.isEmpty
+                                        ? null
+                                        : IconButton(
+                                          tooltip:
+                                              MaterialLocalizations.of(
+                                                context,
+                                              ).deleteButtonTooltip,
+                                          onPressed: search.clearSearch,
+                                          icon: const Icon(Icons.clear),
+                                        ),
                               ),
                             ),
                           const SizedBox(height: AppSpacing.small),
@@ -581,14 +615,15 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                                 .toList(growable: false),
                             onPrioritySelected: _togglePriority,
                             onTagSelected: _toggleTag,
-                            onCompletedSelected: (completed) => _setQuery(
-                              completed == null
-                                  ? query.copyWith(clearCompleted: true)
-                                  : query.copyWith(completed: completed),
-                            ),
+                            onCompletedSelected:
+                                (completed) => _setQuery(
+                                  completed == null
+                                      ? query.copyWith(clearCompleted: true)
+                                      : query.copyWith(completed: completed),
+                                ),
                             onDueDateSelected: _toggleDueDate,
-                            onSortSelected: (sort) =>
-                                _setQuery(query.copyWith(sort: sort)),
+                            onSortSelected:
+                                (sort) => _setQuery(query.copyWith(sort: sort)),
                           ),
                           const SizedBox(height: AppSpacing.section),
                           if (result.matches.isEmpty &&
@@ -598,6 +633,7 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                           else ...[
                             _TodoSection(
                               title: l10n.activeTodos,
+                              isActive: true,
                               matches: active
                                   .where(
                                     (match) => match.todo.listId == list.id,
@@ -608,6 +644,7 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                             const SizedBox(height: AppSpacing.large),
                             _TodoSection(
                               title: l10n.completedTodos,
+                              isActive: false,
                               matches: completed
                                   .where(
                                     (match) => match.todo.listId == list.id,
@@ -668,24 +705,28 @@ class _QueryControls extends StatelessWidget {
               ),
               PopupMenuButton<_CompletionChoice>(
                 key: const ValueKey('todo-status-filter'),
+                position: PopupMenuPosition.under,
+                offset: const Offset(0, AppSpacing.xSmall),
+                popUpAnimationStyle: _mobileMenuAnimation,
                 onSelected: (choice) => onCompletedSelected(choice.value),
-                itemBuilder: (context) => [
-                  CheckedPopupMenuItem(
-                    value: _CompletionChoice.all,
-                    checked: query.completed == null,
-                    child: Text(l10n.allFilter),
-                  ),
-                  CheckedPopupMenuItem(
-                    value: _CompletionChoice.active,
-                    checked: query.completed == false,
-                    child: Text(l10n.activeFilter),
-                  ),
-                  CheckedPopupMenuItem(
-                    value: _CompletionChoice.completed,
-                    checked: query.completed == true,
-                    child: Text(l10n.completedFilter),
-                  ),
-                ],
+                itemBuilder:
+                    (context) => [
+                      CheckedPopupMenuItem(
+                        value: _CompletionChoice.all,
+                        checked: query.completed == null,
+                        child: Text(l10n.allFilter),
+                      ),
+                      CheckedPopupMenuItem(
+                        value: _CompletionChoice.active,
+                        checked: query.completed == false,
+                        child: Text(l10n.activeFilter),
+                      ),
+                      CheckedPopupMenuItem(
+                        value: _CompletionChoice.completed,
+                        checked: query.completed == true,
+                        child: Text(l10n.completedFilter),
+                      ),
+                    ],
                 child: _FilterButtonLabel(
                   label: _statusLabel(l10n, query.completed),
                 ),
@@ -726,17 +767,19 @@ class _SortMenu extends StatelessWidget {
       key: const ValueKey('todo-sort-filter'),
       position: PopupMenuPosition.under,
       offset: const Offset(0, AppSpacing.xSmall),
+      popUpAnimationStyle: _mobileMenuAnimation,
       onSelected: onSelected,
-      itemBuilder: (context) => TodoSort.values
-          .map(
-            (sort) => CheckedPopupMenuItem(
-              value: sort,
-              checked: query.sort == sort,
-              child: Text(labels[sort]!),
-            ),
-          )
-          .toList(growable: false),
-      child: _FilterButtonLabel(label: l10n.sortLabel),
+      itemBuilder:
+          (context) => TodoSort.values
+              .map(
+                (sort) => CheckedPopupMenuItem(
+                  value: sort,
+                  checked: query.sort == sort,
+                  child: Text(labels[sort]!),
+                ),
+              )
+              .toList(growable: false),
+      child: _FilterButtonLabel(label: labels[query.sort]!),
     );
   }
 }
@@ -762,16 +805,20 @@ class _PriorityMenu extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return PopupMenuButton<TodoPriority>(
       key: const ValueKey('todo-priority-filter'),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, AppSpacing.xSmall),
+      popUpAnimationStyle: _mobileMenuAnimation,
       onSelected: onSelected,
-      itemBuilder: (context) => TodoPriority.values
-          .map(
-            (priority) => CheckedPopupMenuItem(
-              value: priority,
-              checked: query.priorities.contains(priority),
-              child: Text(_priorityLabel(l10n, priority)),
-            ),
-          )
-          .toList(growable: false),
+      itemBuilder:
+          (context) => TodoPriority.values
+              .map(
+                (priority) => CheckedPopupMenuItem(
+                  value: priority,
+                  checked: query.priorities.contains(priority),
+                  child: Text(_priorityLabel(l10n, priority)),
+                ),
+              )
+              .toList(growable: false),
       child: _FilterButtonLabel(label: l10n.filterPriority),
     );
   }
@@ -793,6 +840,9 @@ class _TagMenu extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return PopupMenuButton<String>(
       key: const ValueKey('todo-tag-filter'),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, AppSpacing.xSmall),
+      popUpAnimationStyle: _mobileMenuAnimation,
       onSelected: onSelected,
       itemBuilder: (context) {
         if (availableTags.isEmpty) {
@@ -831,16 +881,20 @@ class _DueDateMenu extends StatelessWidget {
     };
     return PopupMenuButton<TodoDueDateFilter>(
       key: const ValueKey('todo-due-date-filter'),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, AppSpacing.xSmall),
+      popUpAnimationStyle: _mobileMenuAnimation,
       onSelected: onSelected,
-      itemBuilder: (context) => TodoDueDateFilter.values
-          .map(
-            (filter) => CheckedPopupMenuItem(
-              value: filter,
-              checked: query.dueDateFilters.contains(filter),
-              child: Text(labels[filter]!),
-            ),
-          )
-          .toList(growable: false),
+      itemBuilder:
+          (context) => TodoDueDateFilter.values
+              .map(
+                (filter) => CheckedPopupMenuItem(
+                  value: filter,
+                  checked: query.dueDateFilters.contains(filter),
+                  child: Text(labels[filter]!),
+                ),
+              )
+              .toList(growable: false),
       child: _FilterButtonLabel(label: l10n.filterDueDate),
     );
   }
@@ -925,11 +979,13 @@ String _priorityLabel(AppLocalizations l10n, TodoPriority priority) {
 class _TodoSection extends StatelessWidget {
   const _TodoSection({
     required this.title,
+    required this.isActive,
     required this.matches,
     required this.workspace,
   });
 
   final String title;
+  final bool isActive;
   final List<TodoMatch> matches;
   final TodoWorkspace workspace;
 
@@ -946,9 +1002,7 @@ class _TodoSection extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
               child: Text(
-                title == l10n.activeTodos
-                    ? l10n.noActiveTodos
-                    : l10n.noCompletedTodos,
+                isActive ? l10n.noActiveTodos : l10n.noCompletedTodos,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
@@ -994,14 +1048,18 @@ class _TodoRow extends StatelessWidget {
               ),
               Expanded(
                 child: InkWell(
-                  onTap: () => unawaited(
-                    Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            TodoEditorPage(workspace: workspace, todo: todo),
+                  onTap:
+                      () => unawaited(
+                        Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(
+                            builder:
+                                (_) => TodoEditorPage(
+                                  workspace: workspace,
+                                  todo: todo,
+                                ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
                       minHeight: AppDimensions.minimumTouchTarget,
@@ -1013,10 +1071,8 @@ class _TodoRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _HighlightedTitle(match: match),
-                          if (todo.tags.isNotEmpty || todo.dueDate != null) ...[
-                            const SizedBox(height: AppSpacing.xSmall),
-                            _TodoMetadata(todo: todo),
-                          ],
+                          const SizedBox(height: AppSpacing.xSmall),
+                          _TodoMetadata(todo: todo),
                         ],
                       ),
                     ),
@@ -1050,9 +1106,10 @@ class _HighlightedTitle extends StatelessWidget {
         title,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: match.todo.completed
-            ? const TextStyle(decoration: TextDecoration.lineThrough)
-            : null,
+        style:
+            match.todo.completed
+                ? const TextStyle(decoration: TextDecoration.lineThrough)
+                : null,
       );
     }
 

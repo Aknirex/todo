@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:characters/characters.dart';
+
 enum TodoPriority { high, medium, low }
 
 extension TodoPriorityValue on TodoPriority {
@@ -67,11 +69,12 @@ class Todo {
   final DateTime updatedAt;
 
   String get displayText {
-    if (title.isNotEmpty) return title;
+    if (title.trim().isNotEmpty) return title;
     final summary = detail.trim();
     if (summary.isEmpty) return ' ';
-    if (summary.length <= 50) return summary;
-    return '${summary.substring(0, 50)}…';
+    final characters = summary.characters;
+    if (characters.length <= 50) return summary;
+    return '${characters.take(50)}…';
   }
 
   Map<String, Object?> toJson() {
@@ -81,11 +84,12 @@ class Todo {
       'title': title,
       'detail': detail,
       'priority': priority.value,
-      'dueDate': dueDate == null
-          ? null
-          : '${dueDate!.year.toString().padLeft(4, '0')}-'
-                '${dueDate!.month.toString().padLeft(2, '0')}-'
-                '${dueDate!.day.toString().padLeft(2, '0')}',
+      'dueDate':
+          dueDate == null
+              ? null
+              : '${dueDate!.year.toString().padLeft(4, '0')}-'
+                  '${dueDate!.month.toString().padLeft(2, '0')}-'
+                  '${dueDate!.day.toString().padLeft(2, '0')}',
       'tags': tags,
       'completed': completed,
       'createdAt': createdAt.microsecondsSinceEpoch,
@@ -199,12 +203,12 @@ class TodoCommand {
     return TodoCommand(
       id: json['id']! as String,
       type: type,
-      before: before is Map
-          ? Todo.fromJson(Map<String, Object?>.from(before))
-          : null,
-      after: after is Map
-          ? Todo.fromJson(Map<String, Object?>.from(after))
-          : null,
+      before:
+          before is Map
+              ? Todo.fromJson(Map<String, Object?>.from(before))
+              : null,
+      after:
+          after is Map ? Todo.fromJson(Map<String, Object?>.from(after)) : null,
       createdAt: DateTime.fromMicrosecondsSinceEpoch(
         (json['createdAt']! as num).toInt(),
       ),
