@@ -276,7 +276,16 @@ class _TodoEditorPageState extends State<TodoEditorPage>
           ),
         ),
         bottomNavigationBar:
-            widget.isNew ? _buildNewComposerActions(context, l10n) : null,
+            widget.isNew
+                ? AnimatedPadding(
+                  duration: const Duration(milliseconds: 150),
+                  curve: Curves.easeOut,
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.viewInsetsOf(context).bottom,
+                  ),
+                  child: _buildNewComposerActions(context, l10n),
+                )
+                : null,
       ),
     );
   }
@@ -406,6 +415,8 @@ class _TodoEditorPageState extends State<TodoEditorPage>
   }
 }
 
+final RegExp _tagSeparators = RegExp(r'[,，]');
+
 List<String> parseTodoTags(String input) {
-  return normalizeTodoTags(input.split(RegExp(r'[,，]')));
+  return normalizeTodoTags(input.split(_tagSeparators));
 }

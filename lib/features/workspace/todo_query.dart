@@ -88,7 +88,7 @@ class TodoQueryEngine {
     for (final todo in source) {
       if (!_matchesFilters(todo, query, today)) continue;
 
-      final titleRanges = _findRanges(todo.title, search);
+      final titleRanges = _findRanges(todo.displayText, search);
       if (search.isNotEmpty &&
           titleRanges.isEmpty &&
           !_contains(todo.detail, search) &&
