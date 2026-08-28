@@ -35,6 +35,63 @@ void main() {
   });
 
   testWidgets(
+    'new Todo composer keeps create reachable and submits all fields',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
+      await workspace.start();
+      await _pumpApp(tester, workspace);
+
+      await tester.tap(find.byTooltip('Create Todo'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('undo-button')), findsNothing);
+      expect(find.byKey(const ValueKey('redo-button')), findsNothing);
+      expect(find.text('Medium'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey('todo-tags-input'))).dx,
+        greaterThan(
+          tester
+              .getTopLeft(find.byKey(const ValueKey('todo-priority-input')))
+              .dx,
+        ),
+      );
+      expect(find.byKey(const ValueKey('todo-create-button')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('todo-create-button'))).height,
+        greaterThanOrEqualTo(48),
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey('todo-title-input')),
+        'Buy tea',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('todo-detail-input')),
+        'Green tea',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('todo-tags-input')),
+        'home， errands, home',
+      );
+      await tester.tap(find.byKey(const ValueKey('todo-priority-input')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('High').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('todo-create-button')));
+      await tester.pumpAndSettle();
+
+      final created = workspace.current.todos.single;
+      expect(created.title, 'Buy tea');
+      expect(created.detail, 'Green tea');
+      expect(created.priority, TodoPriority.high);
+      expect(created.tags, ['home', 'errands']);
+      expect(find.text('Buy tea'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'first system back dismisses new-editor focus and second back discards',
     (tester) async {
       final workspace = TodoWorkspace(MemoryTodoWorkspaceStore());
