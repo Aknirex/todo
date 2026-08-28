@@ -217,10 +217,11 @@ class _TodoEditorPageState extends State<TodoEditorPage>
           ),
           title: Text(widget.isNew ? l10n.newTodo : l10n.editTodo),
           actions: [
-            TodoHistoryActions(
-              workspace: widget.workspace,
-              onHistoryChanged: _handleHistoryChanged,
-            ),
+            if (!widget.isNew)
+              TodoHistoryActions(
+                workspace: widget.workspace,
+                onHistoryChanged: _handleHistoryChanged,
+              ),
             if (!widget.isNew)
               IconButton(
                 key: const ValueKey('todo-detail-delete-button'),
@@ -264,78 +265,137 @@ class _TodoEditorPageState extends State<TodoEditorPage>
                       decoration: InputDecoration(labelText: l10n.detailLabel),
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    KeyedSubtree(
-                      key: ValueKey('todo-priority-value-${_priority.name}'),
-                      child: DropdownButtonFormField<TodoPriority>(
-                        key: const ValueKey('todo-priority-input'),
-                        initialValue: _priority,
-                        decoration: InputDecoration(
-                          labelText: l10n.priorityLabel,
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: TodoPriority.high,
-                            child: Text(l10n.highPriority),
-                          ),
-                          DropdownMenuItem(
-                            value: TodoPriority.medium,
-                            child: Text(l10n.mediumPriority),
-                          ),
-                          DropdownMenuItem(
-                            value: TodoPriority.low,
-                            child: Text(l10n.lowPriority),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) setState(() => _priority = value);
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.medium),
-                    InputDecorator(
-                      decoration: InputDecoration(labelText: l10n.dueDateLabel),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextButton.icon(
-                              key: const ValueKey('todo-due-date-input'),
-                              onPressed: _pickDueDate,
-                              icon: const Icon(Icons.calendar_today_outlined),
-                              label: Text(_formatDueDate(context, _dueDate)),
-                            ),
-                          ),
-                          if (_dueDate != null)
-                            IconButton(
-                              tooltip: l10n.clearDueDate,
-                              onPressed: () => setState(() => _dueDate = null),
-                              icon: const Icon(Icons.clear),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.medium),
-                    TextField(
-                      key: const ValueKey('todo-tags-input'),
-                      controller: _tagsController,
-                      decoration: InputDecoration(
-                        labelText: l10n.tagsLabel,
-                        hintText: l10n.tagsHint,
-                      ),
-                    ),
-                    if (widget.isNew) ...[
-                      const SizedBox(height: AppSpacing.large),
-                      FilledButton(
-                        key: const ValueKey('todo-create-button'),
-                        onPressed: _createTodo,
-                        child: Text(l10n.create),
-                      ),
-                    ],
+                    if (widget.isNew)
+                      _buildNewComposerFields(context, l10n)
+                    else
+                      _buildEditFields(context, l10n),
                   ],
                 ),
               ),
             ),
           ),
         ),
+        bottomNavigationBar:
+            widget.isNew ? _buildNewComposerActions(context, l10n) : null,
+      ),
+    );
+  }
+
+  Widget _buildEditFields(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _priorityField(l10n),
+        const SizedBox(height: AppSpacing.medium),
+        _dueDateField(context, l10n),
+        const SizedBox(height: AppSpacing.medium),
+        _tagsField(l10n),
+      ],
+    );
+  }
+
+  Widget _buildNewComposerFields(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 2, child: _priorityField(l10n)),
+            const SizedBox(width: AppSpacing.small),
+            Expanded(flex: 3, child: _tagsField(l10n)),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.large),
+      ],
+    );
+  }
+
+  Widget _buildNewComposerActions(BuildContext context, AppLocalizations l10n) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.small,
+        AppSpacing.page,
+        AppSpacing.small,
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _dueDateField(context, l10n)),
+          const SizedBox(width: AppSpacing.small),
+          SizedBox(
+            width: 104,
+            child: FilledButton(
+              key: const ValueKey('todo-create-button'),
+              onPressed: _createTodo,
+              child: Text(l10n.create),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _priorityField(AppLocalizations l10n) {
+    return KeyedSubtree(
+      key: ValueKey('todo-priority-value-${_priority.name}'),
+      child: DropdownButtonFormField<TodoPriority>(
+        key: const ValueKey('todo-priority-input'),
+        isExpanded: true,
+        initialValue: _priority,
+        decoration: InputDecoration(labelText: l10n.priorityLabel),
+        items: [
+          DropdownMenuItem(
+            value: TodoPriority.high,
+            child: Text(l10n.highPriority),
+          ),
+          DropdownMenuItem(
+            value: TodoPriority.medium,
+            child: Text(l10n.mediumPriority),
+          ),
+          DropdownMenuItem(
+            value: TodoPriority.low,
+            child: Text(l10n.lowPriority),
+          ),
+        ],
+        onChanged: (value) {
+          if (value != null) setState(() => _priority = value);
+        },
+      ),
+    );
+  }
+
+  Widget _dueDateField(BuildContext context, AppLocalizations l10n) {
+    return InputDecorator(
+      decoration: InputDecoration(labelText: l10n.dueDateLabel),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextButton.icon(
+              key: const ValueKey('todo-due-date-input'),
+              onPressed: _pickDueDate,
+              icon: const Icon(Icons.calendar_today_outlined),
+              label: Text(_formatDueDate(context, _dueDate)),
+            ),
+          ),
+          if (_dueDate != null)
+            IconButton(
+              tooltip: l10n.clearDueDate,
+              onPressed: () => setState(() => _dueDate = null),
+              icon: const Icon(Icons.clear),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tagsField(AppLocalizations l10n) {
+    return TextField(
+      key: const ValueKey('todo-tags-input'),
+      controller: _tagsController,
+      decoration: InputDecoration(
+        labelText: l10n.tagsLabel,
+        hintText: l10n.tagsHint,
       ),
     );
   }
@@ -347,5 +407,5 @@ class _TodoEditorPageState extends State<TodoEditorPage>
 }
 
 List<String> parseTodoTags(String input) {
-  return normalizeTodoTags(input.split(','));
+  return normalizeTodoTags(input.split(RegExp(r'[,，]')));
 }
