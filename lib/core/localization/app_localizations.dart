@@ -20,9 +20,10 @@ class AppLocalizations {
   String get workspaceTitle => isEnglish ? 'Todo workspace' : 'Todo 工作区';
   String get emptyWorkspace =>
       isEnglish ? 'Your workspace is ready.' : '工作区已准备就绪。';
-  String get emptyWorkspaceHint => isEnglish
-      ? 'Todo actions will appear here in the next layer.'
-      : 'Todo 行为将在后续应用层接入。';
+  String get emptyWorkspaceHint =>
+      isEnglish
+          ? 'Todo actions will appear here in the next layer.'
+          : 'Todo 行为将在后续应用层接入。';
   String get defaultList => isEnglish ? 'Default List' : '默认 List';
   String get activeTodos => isEnglish ? 'Active' : '未完成';
   String get completedTodos => isEnglish ? 'Completed' : '已完成';
@@ -97,9 +98,10 @@ class AppLocalizations {
       isEnglish ? 'JSON backup copied to the clipboard.' : 'JSON 备份已复制到剪贴板。';
   String get backupExportFailed =>
       isEnglish ? 'The backup could not be exported.' : '备份无法导出。';
-  String get noBackupToImport => isEnglish
-      ? 'There is no JSON backup in the clipboard.'
-      : '剪贴板中没有 JSON 备份。';
+  String get noBackupToImport =>
+      isEnglish
+          ? 'There is no JSON backup in the clipboard.'
+          : '剪贴板中没有 JSON 备份。';
   String get importSucceeded =>
       isEnglish ? 'Backup imported successfully.' : '备份导入成功。';
   String get importConflicts => isEnglish ? 'Conflicts' : '冲突';
