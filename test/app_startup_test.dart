@@ -29,7 +29,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Todo 工作区'), findsOneWidget);
+    expect(find.text('Default List'), findsOneWidget);
     expect(find.byTooltip('Switch to English'), findsOneWidget);
   });
 
@@ -51,7 +51,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Todo workspace'), findsOneWidget);
+    expect(find.text('Default List'), findsOneWidget);
     expect(find.byTooltip('切换到简体中文'), findsOneWidget);
   });
 

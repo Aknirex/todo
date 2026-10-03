@@ -434,9 +434,7 @@ void main() {
     );
   });
 
-  testWidgets('every Todo row shows the default Priority badge', (
-    tester,
-  ) async {
+  testWidgets('every Todo row shows the priority color bar', (tester) async {
     final workspace = TodoWorkspace(
       MemoryTodoWorkspaceStore(todos: [_todo('bare', title: 'Bare todo')]),
     );
@@ -444,7 +442,9 @@ void main() {
     await _pumpApp(tester, workspace);
 
     expect(find.text('Bare todo'), findsOneWidget);
-    expect(find.text('Medium'), findsOneWidget);
+    final priorityBar = find.byKey(const ValueKey('todo-priority-bar-bare'));
+    expect(priorityBar, findsOneWidget);
+    expect(find.text('Medium'), findsNothing);
   });
 
   testWidgets('crossing to a wide breakpoint collapses the expanded search', (

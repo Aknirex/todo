@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/open.dart';
 
 import 'package:aknirex_todo/core/backup/backup_service.dart';
+import 'package:aknirex_todo/core/design_system/design_tokens.dart';
 import 'package:aknirex_todo/core/settings/settings_controller.dart';
 import 'package:aknirex_todo/core/storage/app_database.dart';
 import 'package:aknirex_todo/features/workspace/todo.dart';
@@ -55,7 +56,17 @@ void main() {
     expect(decoded['version'], 1);
     expect(decoded['lists'], isNotEmpty);
     expect((decoded['todos'] as List).single['id'], 'todo-export');
-    expect(decoded['settings'], {'themeMode': 'dark', 'locale': 'en'});
+    final exportedSettings = decoded['settings'] as Map<String, dynamic>;
+    expect(exportedSettings['themeMode'], 'dark');
+    expect(exportedSettings['locale'], 'en');
+    final exportedPalette =
+        exportedSettings['priorityColors'] as Map<String, dynamic>;
+    expect(exportedPalette['high'], AppColors.priorityHighDefault.toARGB32());
+    expect(
+      exportedPalette['medium'],
+      AppColors.priorityMediumDefault.toARGB32(),
+    );
+    expect(exportedPalette['low'], AppColors.priorityLowDefault.toARGB32());
     expect(decoded.containsKey('undoRecords'), isFalse);
   });
 

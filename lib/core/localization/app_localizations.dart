@@ -83,6 +83,9 @@ class AppLocalizations {
   String get themeDark => isEnglish ? 'Dark' : '深色';
   String get themeSystem => isEnglish ? 'System' : '跟随系统';
   String get themeMenuLabel => isEnglish ? 'Theme' : '主题';
+  String get priorityColorsLabel => isEnglish ? 'Priority colors' : '优先级颜色';
+  String get chooseColor => isEnglish ? 'Choose a color' : '选择颜色';
+  String get resetPriorityColors => isEnglish ? 'Reset' : '恢复默认';
   String get undo => isEnglish ? 'Undo' : '撤销';
   String get redo => isEnglish ? 'Redo' : '重做';
   String get deleteTodo => isEnglish ? 'Delete Todo' : '删除 Todo';

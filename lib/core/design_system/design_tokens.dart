@@ -8,6 +8,9 @@ abstract final class AppColors {
   static const darkSurface = Color(0xFF1A1D26);
   static const lightText = Color(0xFF151821);
   static const darkText = Color(0xFFF3F4F8);
+  static const priorityHighDefault = Color(0xFFE5484D);
+  static const priorityMediumDefault = Color(0xFFF5B301);
+  static const priorityLowDefault = Color(0xFF8E4EC6);
 }
 
 abstract final class AppSpacing {
@@ -28,6 +31,7 @@ abstract final class AppRadii {
 abstract final class AppDimensions {
   static const minimumTouchTarget = 48.0;
   static const appBarHeight = 64.0;
+  static const composerRestingInset = 20.0;
 }
 
 abstract final class AppTypography {

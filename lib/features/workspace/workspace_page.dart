@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/design_system/design_tokens.dart';
 import '../../core/localization/app_localizations.dart';
+import '../../core/settings/settings_controller.dart';
 import '../../providers.dart';
 import '../settings/settings_page.dart';
 import 'todo.dart';
@@ -72,7 +73,20 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
             child: Scaffold(
               resizeToAvoidBottomInset: true,
               appBar: AppBar(
-                title: _MobileSearchTitle(search: _search),
+                title: ListenableBuilder(
+                  listenable: widget.workspace,
+                  builder: (context, _) {
+                    final lists = widget.workspace.current.lists;
+                    final listName =
+                        lists.isEmpty
+                            ? AppLocalizations.of(context).workspaceTitle
+                            : lists.first.name;
+                    return _MobileSearchTitle(
+                      search: _search,
+                      title: listName,
+                    );
+                  },
+                ),
                 actions: [
                   if (isMobile) _MobileSearchActions(search: _search),
                   _WorkspaceActions(
@@ -202,14 +216,15 @@ class _WorkspaceSearchController extends ChangeNotifier {
 }
 
 class _MobileSearchTitle extends StatelessWidget {
-  const _MobileSearchTitle({required this.search});
+  const _MobileSearchTitle({required this.search, required this.title});
 
   final _WorkspaceSearchController search;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.sizeOf(context).width >= 600) {
-      return Text(AppLocalizations.of(context).workspaceTitle);
+      return Text(title, maxLines: 1, overflow: TextOverflow.ellipsis);
     }
     return ListenableBuilder(
       listenable: search,
@@ -287,8 +302,10 @@ class _MobileSearchTitle extends StatelessWidget {
                     ),
                   )
                   : Text(
-                    AppLocalizations.of(context).workspaceTitle,
+                    title,
                     key: const ValueKey('workspace-title'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
         );
       },
@@ -569,13 +586,6 @@ class _WorkspaceContentState extends State<_WorkspaceContent> {
                         const _EmptyWorkspaceState()
                       else
                         for (final list in workspace.current.lists) ...[
-                          Text(
-                            list.name,
-                            style: Theme.of(context).textTheme.displaySmall,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: AppSpacing.medium),
                           if (MediaQuery.sizeOf(context).width >= 600)
                             TextField(
                               key: const ValueKey('todo-search-input'),
@@ -976,6 +986,17 @@ String _priorityLabel(AppLocalizations l10n, TodoPriority priority) {
   }
 }
 
+PrioritySlot _prioritySlot(TodoPriority priority) {
+  switch (priority) {
+    case TodoPriority.high:
+      return PrioritySlot.high;
+    case TodoPriority.medium:
+      return PrioritySlot.medium;
+    case TodoPriority.low:
+      return PrioritySlot.low;
+  }
+}
+
 class _TodoSection extends StatelessWidget {
   const _TodoSection({
     required this.title,
@@ -1019,74 +1040,104 @@ class _TodoSection extends StatelessWidget {
   }
 }
 
-class _TodoRow extends StatelessWidget {
+class _TodoRow extends ConsumerWidget {
   const _TodoRow({required this.match, required this.workspace});
 
   final TodoMatch match;
   final TodoWorkspace workspace;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final todo = match.todo;
+    final palette =
+        ref.watch(settingsControllerProvider).valueOrNull?.priorityPalette ??
+        const PriorityPalette();
+    final hasMetadata = todo.dueDate != null || todo.tags.isNotEmpty;
     return Card(
-      child: Semantics(
-        label: AppLocalizations.of(context).todoRow,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.small,
-            vertical: AppSpacing.xSmall,
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: AppDimensions.minimumTouchTarget,
-                height: AppDimensions.minimumTouchTarget,
-                child: Checkbox(
-                  value: todo.completed,
-                  onChanged: (_) => unawaited(workspace.toggleTodo(todo.id)),
-                ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap:
-                      () => unawaited(
-                        Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (_) => TodoEditorPage(
-                                  workspace: workspace,
-                                  todo: todo,
-                                ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              key: ValueKey('todo-priority-bar-${todo.id}'),
+              width: 6,
+              color: palette.of(_prioritySlot(todo.priority)),
+            ),
+            Expanded(
+              child: Semantics(
+                label: AppLocalizations.of(context).todoRow,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.small,
+                    vertical: AppSpacing.xSmall,
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: AppDimensions.minimumTouchTarget,
+                        height: AppDimensions.minimumTouchTarget,
+                        child: Center(
+                          child: Transform.scale(
+                            scale: 1.35,
+                            transformHitTests: false,
+                            child: Checkbox(
+                              value: todo.completed,
+                              onChanged: (_) {
+                                unawaited(workspace.toggleTodo(todo.id));
+                              },
+                            ),
                           ),
                         ),
                       ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minHeight: AppDimensions.minimumTouchTarget,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _HighlightedTitle(match: match),
-                          const SizedBox(height: AppSpacing.xSmall),
-                          _TodoMetadata(todo: todo),
-                        ],
+                      Expanded(
+                        child: InkWell(
+                          onTap:
+                              () => unawaited(
+                                Navigator.of(context).push<void>(
+                                  MaterialPageRoute<void>(
+                                    builder:
+                                        (_) => TodoEditorPage(
+                                          workspace: workspace,
+                                          todo: todo,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minHeight: AppDimensions.minimumTouchTarget,
+                            ),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _HighlightedTitle(match: match),
+                                  if (hasMetadata) ...[
+                                    const SizedBox(height: AppSpacing.xSmall),
+                                    _TodoMetadata(todo: todo),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      IconButton(
+                        key: ValueKey('todo-delete-${todo.id}'),
+                        tooltip: AppLocalizations.of(context).deleteTodo,
+                        onPressed:
+                            () => unawaited(workspace.deleteTodo(todo.id)),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              IconButton(
-                key: ValueKey('todo-delete-${todo.id}'),
-                tooltip: AppLocalizations.of(context).deleteTodo,
-                onPressed: () => unawaited(workspace.deleteTodo(todo.id)),
-                icon: const Icon(Icons.delete_outline),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1169,7 +1220,6 @@ class _TodoMetadata extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final labels = <String>[
       if (todo.dueDate != null)
         MaterialLocalizations.of(context).formatCompactDate(todo.dueDate!),
@@ -1179,10 +1229,6 @@ class _TodoMetadata extends StatelessWidget {
       spacing: AppSpacing.xSmall,
       runSpacing: AppSpacing.xSmall,
       children: [
-        _MetadataBadge(
-          label: _priorityLabel(l10n, todo.priority),
-          color: Theme.of(context).colorScheme.primary,
-        ),
         for (final label in labels) _MetadataBadge(label: label),
       ],
     );
@@ -1190,17 +1236,16 @@ class _TodoMetadata extends StatelessWidget {
 }
 
 class _MetadataBadge extends StatelessWidget {
-  const _MetadataBadge({required this.label, this.color});
+  const _MetadataBadge({required this.label});
 
   final String label;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: color?.withValues(alpha: 0.12) ?? scheme.surfaceContainerHighest,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppRadii.small),
       ),
       child: Padding(

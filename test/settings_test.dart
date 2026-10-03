@@ -32,5 +32,22 @@ void main() {
 
     expect(loaded.themeMode, ThemeMode.dark);
     expect(loaded.locale, const Locale('zh', 'CN'));
+    expect(loaded.priorityPalette, const PriorityPalette());
+  });
+
+  test('priority colors persist through shared preferences', () async {
+    SharedPreferences.setMockInitialValues({});
+    const palette = PriorityPalette(
+      high: Color(0xFF112233),
+      medium: Color(0xFF445566),
+      low: Color(0xFF778899),
+    );
+
+    await SharedPreferencesSettingsStore().save(
+      const AppSettings(priorityPalette: palette),
+    );
+    final loaded = await SharedPreferencesSettingsStore().load();
+
+    expect(loaded.priorityPalette, palette);
   });
 }

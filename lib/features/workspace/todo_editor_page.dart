@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -281,7 +282,10 @@ class _TodoEditorPageState extends State<TodoEditorPage>
                   duration: const Duration(milliseconds: 150),
                   curve: Curves.easeOut,
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.viewInsetsOf(context).bottom,
+                    bottom: math.max(
+                      MediaQuery.viewInsetsOf(context).bottom,
+                      AppDimensions.composerRestingInset,
+                    ),
                   ),
                   child: _buildNewComposerActions(context, l10n),
                 )
@@ -330,7 +334,7 @@ class _TodoEditorPageState extends State<TodoEditorPage>
       ),
       child: Row(
         children: [
-          Expanded(child: _dueDateField(context, l10n)),
+          Expanded(child: _composerDueDateField(context, l10n)),
           const SizedBox(width: AppSpacing.small),
           SizedBox(
             width: 104,
@@ -342,6 +346,50 @@ class _TodoEditorPageState extends State<TodoEditorPage>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _composerDueDateField(BuildContext context, AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: AppDimensions.minimumTouchTarget,
+            child: OutlinedButton(
+              key: const ValueKey('todo-due-date-input'),
+              onPressed: _pickDueDate,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.small,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today_outlined, size: 18),
+                  const SizedBox(width: AppSpacing.xSmall),
+                  Text(l10n.dueDateLabel),
+                  const SizedBox(width: AppSpacing.xSmall),
+                  Expanded(
+                    child: Text(
+                      _formatDueDate(context, _dueDate),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_dueDate != null)
+          IconButton(
+            key: const ValueKey('todo-due-date-clear'),
+            tooltip: l10n.clearDueDate,
+            onPressed: () => setState(() => _dueDate = null),
+            icon: const Icon(Icons.clear, size: 20),
+          ),
+      ],
     );
   }
 

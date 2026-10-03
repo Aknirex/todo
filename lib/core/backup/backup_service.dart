@@ -191,7 +191,28 @@ Map<String, Object?> _settingsToJson(AppSettings settings) {
             : settings.locale!.languageCode == 'en'
             ? 'en'
             : 'zh-CN',
+    'priorityColors': {
+      'high': settings.priorityPalette.high.toARGB32(),
+      'medium': settings.priorityPalette.medium.toARGB32(),
+      'low': settings.priorityPalette.low.toARGB32(),
+    },
   };
+}
+
+PriorityPalette _parsePriorityPalette(Object? value) {
+  if (value is! Map) return const PriorityPalette();
+  final map = value.cast<String, Object?>();
+  const defaults = PriorityPalette();
+  return PriorityPalette(
+    high: _colorValue(map['high'], defaults.high),
+    medium: _colorValue(map['medium'], defaults.medium),
+    low: _colorValue(map['low'], defaults.low),
+  );
+}
+
+Color _colorValue(Object? value, Color fallback) {
+  if (value is int) return Color(value);
+  return fallback;
 }
 
 bool _sameList(WorkspaceList first, WorkspaceList second) {
@@ -388,7 +409,11 @@ AppSettings _parseSettings(Map<String, Object?> map) {
     'zh-CN' => const Locale('zh', 'CN'),
     _ => throw const BackupValidationException('Unsupported locale.'),
   };
-  return AppSettings(themeMode: themeMode, locale: locale);
+  return AppSettings(
+    themeMode: themeMode,
+    locale: locale,
+    priorityPalette: _parsePriorityPalette(map['priorityColors']),
+  );
 }
 
 bool _isDateOnly(String value) {
