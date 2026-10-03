@@ -7,6 +7,7 @@ import 'package:aknirex_todo/app.dart';
 import 'package:aknirex_todo/core/backup/backup_service.dart';
 import 'package:aknirex_todo/core/storage/app_database.dart';
 import 'package:aknirex_todo/core/settings/settings_controller.dart';
+import 'package:aknirex_todo/features/settings/settings_page.dart';
 import 'package:aknirex_todo/features/workspace/todo_workspace.dart';
 import 'package:aknirex_todo/providers.dart';
 
@@ -155,6 +156,10 @@ void main() {
     expect(settings.value.themeMode, ThemeMode.dark);
     expect(find.text('Settings'), findsOneWidget);
 
+    await _scrollSettingsTo(
+      tester,
+      find.byKey(const ValueKey('backup-export-button')),
+    );
     await tester.tap(find.byKey(const ValueKey('backup-export-button')));
     await tester.pumpAndSettle();
     expect(clipboardText, contains('"version":1'));
@@ -199,12 +204,24 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(
+    await _scrollSettingsTo(
+      tester,
       find.byKey(const ValueKey('backup-import-button')),
     );
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('backup-import-button')));
     await tester.pumpAndSettle();
     expect(find.text('Backup imported successfully.'), findsOneWidget);
   });
+}
+
+Future<void> _scrollSettingsTo(WidgetTester tester, Finder target) async {
+  await tester.scrollUntilVisible(
+    target,
+    200,
+    scrollable: find.descendant(
+      of: find.byType(SettingsPage),
+      matching: find.byType(Scrollable),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
