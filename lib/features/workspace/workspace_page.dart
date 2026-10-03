@@ -81,10 +81,7 @@ class _WorkspacePageState extends ConsumerState<WorkspacePage> {
                         lists.isEmpty
                             ? AppLocalizations.of(context).workspaceTitle
                             : lists.first.name;
-                    return _MobileSearchTitle(
-                      search: _search,
-                      title: listName,
-                    );
+                    return _MobileSearchTitle(search: _search, title: listName);
                   },
                 ),
                 actions: [
@@ -1228,9 +1225,7 @@ class _TodoMetadata extends StatelessWidget {
     return Wrap(
       spacing: AppSpacing.xSmall,
       runSpacing: AppSpacing.xSmall,
-      children: [
-        for (final label in labels) _MetadataBadge(label: label),
-      ],
+      children: [for (final label in labels) _MetadataBadge(label: label)],
     );
   }
 }
